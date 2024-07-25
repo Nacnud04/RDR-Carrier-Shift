@@ -7,11 +7,13 @@ import numpy as np
 from rich import print
 import glob
 import os
+
 # run model on gpu 2
 os.environ["CUDA_VISIBLE_DEVICES"]="1"
 
 # find all model filepaths
 files = np.sort(glob.glob("models/curved_hm_*.keras"))
+print(f"{len(files)} models found")
 batch_size = 32
 
 dataset = io.dataset(dir='../data/curved/valid', pair=(0, 1))
