@@ -2,6 +2,7 @@ import tensorflow as tf
 import sys
 sys.path.insert(0, "../")
 import src.io as io
+from src.plotting import *
 
 import numpy as np
 from rich import print
@@ -30,48 +31,5 @@ for f in np.sort(files):
     preds.append(model.predict(val_dataset))
 
 i = 57
-import matplotlib.pyplot as plt
-from matplotlib.animation import FuncAnimation
 
-fig, ax = plt.subplots(1, 4, figsize=(20, 5))
-sources = np.concatenate([x for x, y in datasets[0]], axis=0)
-targets = np.concatenate([y for x, y in datasets[0]], axis=0)
-
-sc = ax[0].imshow(sources[i], cmap="gray", vmin=-1, vmax=1)
-ax[0].set_title("Source")
-tg = ax[1].imshow(targets[i], cmap="gray", vmin=-1, vmax=1)
-ax[1].set_title("Target")
-
-result = preds[0][i]
-print(f"\n\nMIN:{np.min(result)}\nMAX:{np.max(result)}\n\n")
-re = ax[2].imshow(result, cmap="gray", vmin=-1, vmax=1)
-ax[2].set_title("Result")
-
-difference = targets[i] - result
-dif = ax[3].imshow(difference, cmap="gray", vmin=-1, vmax=1)
-ax[3].set_title("Difference")
-
-suptitle = plt.suptitle(f"Epoch: {0:03d}")
-
-def update(j):
-
-    sources = np.concatenate([x for x, y in datasets[j]], axis=0)
-    targets = np.concatenate([y for x, y in datasets[j]], axis=0)
-    result = preds[j][i]
-    difference = targets[i] - result
-    
-    sc.set_data(sources[i])
-    tg.set_data(targets[i])
-    re.set_data(result)
-    dif.set_data(difference)
-
-    suptitle.set_text(files[j])
-    
-    return sc, tg, re, dif, suptitle
-
-# Create the animation
-ani = FuncAnimation(fig, update, frames=len(files))
-
-ani.save('train_animation.gif', writer='imagemagick', fps=3)
-
-plt.show()
+plt_training(files, datasets, preds, i)
