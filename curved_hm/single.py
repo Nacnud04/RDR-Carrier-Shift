@@ -1,3 +1,9 @@
+"""
+
+Code to just view a single example.
+
+"""
+
 import tensorflow as tf
 import sys, glob, os
 sys.path.insert(0, "../")
@@ -23,6 +29,9 @@ model = tf.keras.models.load_model(model_path)
 print(f"[green]Generating predictions...[/green]")
 preds = model.predict(val_dataset)
 
+# example to choose
+i = int(sys.argv[1])
+
 # plot
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
@@ -31,37 +40,20 @@ fig, ax = plt.subplots(1, 4, figsize=(20, 5))
 sources = np.concatenate([x for x, y in val_dataset], axis=0)
 targets = np.concatenate([y for x, y in val_dataset], axis=0)
 
-sc = ax[0].imshow(sources[0], cmap="gray", vmin=-1, vmax=1)
+sc = ax[0].imshow(sources[i], cmap="gray", vmin=-1, vmax=1)
 ax[0].set_title("Source")
-tg = ax[1].imshow(targets[0], cmap="gray", vmin=-1, vmax=1)
+tg = ax[1].imshow(targets[i], cmap="gray", vmin=-1, vmax=1)
 ax[1].set_title("Target")
 
-result = preds[0]
+result = preds[i]
 print(f"\n\nMIN:{np.min(result)}\nMAX:{np.max(result)}\n\n")
 re = ax[2].imshow(result, cmap="gray", vmin=-1, vmax=1)
 ax[2].set_title("Result")
 
-difference = targets[0] - result
+difference = targets[i] - result
 dif = ax[3].imshow(difference, cmap="gray", vmin=-1, vmax=1)
 ax[3].set_title("Difference")
 
-suptitle = plt.suptitle(f"Example: ")
+suptitle = plt.suptitle(f"Example: {i:03d}")
 
-def update(i):
-
-    result = preds[i]
-    difference = targets[i] - result
-    
-    sc.set_data(sources[i])
-    tg.set_data(targets[i])
-    re.set_data(result)
-    dif.set_data(difference)
-
-    suptitle.set_text(f"Example: {i:03d}")
-    
-    return sc, tg, re, dif, suptitle
-
-# Create the animation
-ani = FuncAnimation(fig, update, frames=len(preds))
-
-ani.save('many_examples.gif', writer='pillow', fps=1)
+plt.show()
