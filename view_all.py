@@ -9,15 +9,15 @@ parser.add_argument("-i", "--index", default=10, type=int, help="Index to start 
 parser.add_argument("-c", "--count", default=1, type=int, help="How many results to show after start index")
 args = parser.parse_args()
 
-model_dirs = ("curved_hm", "curved_hl")
-models = ("models/curved_hm_100.keras", "models/curved_hl_100.keras")
+model_dirs = ("camp_hm", "camp_hl")
+models = ("models/camp_hm_100.keras", "models/camp_hl_100.keras")
 
 print(f"[yellow]Loading models...[/yellow]")
 models = [tf.keras.models.load_model(f'{d}/{m}') for d, m in zip(model_dirs, models)]
 print(f"[bold green]Loaded models![/bold green]")
 
 print(f"[yellow]Loading testing datasets...[/yellow]")
-datasets = [io.dataset(dir='data/curved/valid', pair=p) for p in ((0, 1), (0, 2))]
+datasets = [io.dataset(dir='data/curved_amp/valid', pair=p) for p in ((0, 1), (0, 2))]
 val_datasets = [dataset.tf_dataset(32) for dataset in datasets]
 sources = np.concatenate([x for x, y in val_datasets[0]], axis=0)
 targets1 = np.concatenate([y for x, y in val_datasets[0]], axis=0)
@@ -54,10 +54,10 @@ ax[1, 2].imshow(preds[1][i], cmap="gray")
 
 ax[2, 0].axis('off')
 
-ax[2, 1].imshow(targets1[i] - preds[0][i], cmap="gray")
+ax[2, 1].imshow(targets1[i] - preds[0][i], cmap="gray", vmin=-1, vmax=1)
 ax[2, 1].set_ylabel("Difference")
 
-ax[2, 2].imshow(targets2[i] - preds[1][i], cmap="gray")
+ax[2, 2].imshow(targets2[i] - preds[1][i], cmap="gray", vmin=-1, vmax=1)
 
 for a in ax.flatten():
     a.set_xticks([])

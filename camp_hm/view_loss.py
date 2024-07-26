@@ -26,6 +26,7 @@ plt.ylim(np.min(val_loss), np.max(val_loss))
 plt.title('Model loss')
 plt.xlabel('Epoch')
 plt.ylabel('Loss')
+plt.yscale('log')
 plt.legend(loc='upper right')
 
 plt.tight_layout()
