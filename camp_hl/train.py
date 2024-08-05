@@ -20,8 +20,7 @@ dataset = io.dataset(dir='../data/curved_amp/valid', pair=(0, 2))
 valid_dataset = dataset.tf_dataset(batch_size)
 print("[bold green]Finished loading datasets![/bold green]")
 
-# copy model from planar example to start training based on
-yprint("Generating copy of planar model...")
+yprint("Generating copy of prior model...")
 shutil.copyfile("../curved_hl/models/curved_hl_100.keras", "./camp_hl.keras")
 
 import keras
