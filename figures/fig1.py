@@ -5,10 +5,10 @@ import src.io as io
 import numpy as np
 
 # --- LOAD MODEL ---
-model = tf.keras.models.load_model("../noise/models/hl_noise_050.keras")
+model = tf.keras.models.load_model("../512512/overlap/models/hl_overlap_100.keras")
 
 # --- LOAD DATA ---
-data = io.dataset(dir="../data/noise/valid", pair=(0, 2)).tf_dataset(64)
+data = io.dataset(dir="../data/overlap/valid", pair=(0, 2)).tf_dataset(64)
 sources = np.squeeze(np.array([x for x, y in data]))
 
 # --- PREDICT ---
@@ -16,7 +16,7 @@ output = model.predict(data)
 
 # --- MAKE PLOT --- 
 import matplotlib.pyplot as plt
-i = 46
+i = 12
 fig, ax = plt.subplots(1, 2, figsize=(10, 5))
 
 ax[0].imshow(sources[i, :, :].T, cmap="gray", vmin=-1, vmax=1)
