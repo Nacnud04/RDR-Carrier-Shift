@@ -31,39 +31,53 @@ print(f"[bold green]Done with model predictions and initalization![/bold green]"
 
 
 import matplotlib.pyplot as plt
+from matplotlib.animation import FuncAnimation
 
-i = args.index
+i = 0
 
 fig, ax = plt.subplots(3,3, figsize=(12,12))
 
-ax[0, 0].imshow(sources[i], cmap="gray")
+sc = ax[0, 0].imshow(sources[i], cmap="gray", vmin=-1, vmax=1)
 ax[0, 0].set_title("HF Source")
 ax[0, 0].set_ylabel("Target")
 
-ax[0, 1].imshow(targets1[i], cmap="gray")
+tg_mf = ax[0, 1].imshow(targets1[i], cmap="gray", vmin=-1, vmax=1)
 ax[0, 1].set_title("MF")
 
-ax[0, 2].imshow(targets2[i], cmap="gray")
+tg_lf = ax[0, 2].imshow(targets2[i], cmap="gray", vmin=-1, vmax=1)
 ax[0, 2].set_title("LF")
 
 ax[1, 0].axis('off')
 
-ax[1, 1].imshow(preds[0][i], cmap="gray")
+pd_mf = ax[1, 1].imshow(preds[0][i], cmap="gray", vmin=-1, vmax=1)
 ax[1, 1].set_ylabel("Result")
 
-ax[1, 2].imshow(preds[1][i], cmap="gray")
+pd_lf = ax[1, 2].imshow(preds[1][i], cmap="gray", vmin=-1, vmax=1)
 
 ax[2, 0].axis('off')
 
-ax[2, 1].imshow(targets1[i] - preds[0][i], cmap="gray", vmin=-1, vmax=1)
+df_mf = ax[2, 1].imshow(targets1[i] - preds[0][i], cmap="gray", vmin=-1, vmax=1)
 ax[2, 1].set_ylabel("Difference")
 
-ax[2, 2].imshow(targets2[i] - preds[1][i], cmap="gray", vmin=-1, vmax=1)
+df_lf = ax[2, 2].imshow(targets2[i] - preds[1][i], cmap="gray", vmin=-1, vmax=1)
 
 for a in ax.flatten():
     a.set_xticks([])
     a.set_yticks([])
 
-plt.suptitle(i)
+suptitle = plt.suptitle(i)
 plt.subplots_adjust(wspace=0, hspace=0)
-plt.show()
+
+def update(i):
+    sc.set_data(sources[i])
+    tg_mf.set_data(targets1[i])
+    tg_lf.set_data(targets2[i])
+    pd_mf.set_data(preds[0][i])
+    pd_lf.set_data(preds[1][i])
+    df_mf.set_data(targets1[i]-preds[0][i])
+    df_lf.set_data(targets2[i]-preds[1][i])
+    suptitle.set_text(f"Example: {i:03d}")
+    return sc, tg_mf, tg_lf, pd_mf, pd_lf, df_mf, df_lf, suptitle
+
+ani = FuncAnimation(fig, update, frames=len(targets1))
+ani.save('shapes.gif', writer='pillow', fps=0.5)

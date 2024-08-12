@@ -28,7 +28,7 @@ par['labelattr'] += ' labelsz=5 labelfat=2 '
 
 # ------------------------------------------------------------
 # ------------------------------------------------------------
-nr =  64 # number of realizations
+nr =  int(50/2)*64 # number of realizations
 nc =   3 # number of carriers
 
 # time
