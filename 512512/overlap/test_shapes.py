@@ -11,14 +11,14 @@ parser.add_argument("-i", "--index", default=10, type=int, help="Index to start 
 args = parser.parse_args()
 
 model_dirs = ("./", "./")
-models = ("models/hm_overlap_050.keras", "models/hl_overlap_050.keras")
+models = ("models/hm_overlap_200.keras", "models/hl_overlap_200.keras")
 
 print(f"[yellow]Loading models...[/yellow]")
 models = [tf.keras.models.load_model(f'{d}/{m}') for d, m in zip(model_dirs, models)]
 print(f"[bold green]Loaded models![/bold green]")
 
 print(f"[yellow]Loading testing datasets...[/yellow]")
-datasets = [io.dataset(dir='../../data/overlap/valid', pair=p) for p in ((0, 1), (0, 2))]
+datasets = [io.dataset(dir='../../data/512512/overlap/valid', pair=p) for p in ((0, 1), (0, 2))]
 val_datasets = [dataset.tf_dataset(64) for dataset in datasets]
 sources = np.concatenate([x for x, y in val_datasets[0]], axis=0)
 targets1 = np.concatenate([y for x, y in val_datasets[0]], axis=0)
@@ -80,4 +80,4 @@ def update(i):
     return sc, tg_mf, tg_lf, pd_mf, pd_lf, df_mf, df_lf, suptitle
 
 ani = FuncAnimation(fig, update, frames=len(targets1))
-ani.save('shapes.gif', writer='pillow', fps=0.2)
+ani.save('overlaps.gif', writer='pillow', fps=0.2)

@@ -1,9 +1,9 @@
-data/*/*.rsf
-data/*/*.vpl
-data/*/valid/*.rsf
-data/*/valid/*.vpl
-data/*/Fig
-data/*/valid/Fig
+data/*/*/*.rsf
+data/*/*/*.vpl
+data/*/*/valid/*.rsf
+data/*/*/valid/*.vpl
+data/*/*/Fig
+data/*/*/valid/Fig
 
 info.txt
 

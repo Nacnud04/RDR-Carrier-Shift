@@ -1,0 +1,80 @@
+from rsf.proj import *
+import wplot, pplot
+
+import numpy as np
+np.random.seed(2024)
+
+# ------------------------------------------------------------
+# global parameters
+genplots = False
+testset  = 0.0
+par = dict( nt=512,  ot=+0.0,    dt=0.05,    lt='t',   ut='us',
+            nx=512,  ox=-1000.0, dx=4.00,    lx='x',   ux='.',
+            npx=101, opx=-0.005, dpx=0.0001, lpx='px', upx='us/.',
+            verb='y'
+        )
+par['fPeak']  = 4.0 # [MHz] wavelet peak frequency
+par['fBand']  = 1.0 # [MHz] wavelet frequency band
+
+par['pmin'] = par['opx']
+par['pmax'] = par['opx'] + (par['npx']-1) * par['dpx']
+
+wplot.param(par)
+wplot.dgrey2d_init(250.0,par)
+par['dheight2d'] = 11
+par['labelattr'] += ' labelsz=5 labelfat=2 '
+
+# ------------------------------------------------------------
+# ------------------------------------------------------------
+nr = 5000 # number of realizations
+nc =   3 # number of carriers
+
+for jr in range(nr): # loop over realizations
+    rtag = "-r%03d"%jr
+
+    tPeak = par['tmin']+4 + (par['tmax'] - par['tmin'] -8) * np.random.rand(1)
+    px    = par['pmin']   + (par['pmax'] - par['pmin']   ) * np.random.rand(1)
+
+
+    if np.random.rand(1) < testset:
+        fst = 't'
+    else:
+        fst = ''
+
+    for ic in range(nc): # loop over carriers
+        ctag = "%d"%ic
+
+        fPeak = par['fPeak'] / np.power(2,ic)
+
+        fname = fst+'dat'+ctag+rtag    
+
+        Flow(fname,None,
+            '''  
+            math n1=%d o1=%g d1=%g label1=%s unit1=%s
+                 n2=%d o2=%g d2=%g label2=%s unit2=%s
+            output="cos( 2 * (%g)   * (%g)   * (x1 - (%g) + (%g) * x2 )  ) *
+                    exp(-2 * (%g)^2 * (%g)^2 * (x1 - (%g) + (%g) * x2 )^2)" 
+            '''%( par['nt'],par['ot'],par['dt'],par['lt'],par['ut'],
+                  par['nx'],par['ox'],par['dx'],par['lx'],par['ux'],
+                  np.pi, fPeak,          tPeak, px,  
+                  np.pi, par['fBand']/4, tPeak, px
+                  ) 
+            )
+
+        if genplots:
+            if ic == 1 or ic ==2:
+                Plot('dat'+ctag+rtag,wplot.dgrey2d('wantaxis=n',par))
+            else:
+                Plot('dat'+ctag+rtag,wplot.dgrey2d('grid=y',par))
+    
+    if genplots:
+        pplot.multip('dat'+rtag,['dat0'+rtag,'dat1'+rtag,'dat2'+rtag],1,3, 1.0,1.0, 0.0,-3.75)
+        Result('dat'+rtag,'dat'+rtag,'Overlay')
+
+# concat into fewer files (1 per carrier)
+# do for the first carrier
+filenames_by_carrier = [[f"dat{c}-r{str(n).zfill(3)}.rsf" for n in range(nr)] for c in range(nc)]
+for i, filenames in enumerate(filenames_by_carrier):
+    Flow(f"dat{i}", filenames, 'cat axis=3 ${SOURCES[1:-1]}')
+
+End()

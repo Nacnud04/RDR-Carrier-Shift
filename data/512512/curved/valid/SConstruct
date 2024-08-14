@@ -1,0 +1,131 @@
+from rsf.proj import *
+import wplot, pplot
+
+import numpy as np
+np.random.seed(2023)
+
+VERB      = False # verbose mode
+PLOT      = True  #    plot mode
+
+AMPLITUDE = False  # add amplitude variation
+CURVATURE = True  # add curvature
+
+# ------------------------------------------------------------
+# global parameters
+par = dict( nt=512,  ot=+0.0,     dt=0.05,     lt='t',   ut='us',
+            nx=512,  ox=-1000.0,  dx=4.00,     lx='x',   ux='.',
+            verb='y'
+        )
+par['fPeak']  = 4.0 # [MHz] wavelet peak frequency
+par['fBand']  = 1.0 # [MHz] wavelet frequency band
+
+wplot.param(par)
+wplot.dgrey2d_init(250.0,par)
+par['dheight2d'] = 11
+par['labelattr'] += ' labelsz=5 labelfat=2 '
+
+# ------------------------------------------------------------
+# ------------------------------------------------------------
+nr =  64 # number of realizations
+nc =   3 # number of carriers
+
+# time
+tcen = par['ot'] + (par['nt']-1)/2 * par['dt']
+tsig =             (par['nt']-1)/8 * par['dt']
+tx = np.random.normal( tcen, tsig, nr)
+if VERB: print(tx)
+
+# slope
+pcen = 0.000
+psig = 0.002
+px = np.random.normal( pcen, psig, nr)
+if VERB: print(px)
+
+# amplitude
+if AMPLITUDE:
+    acen = 0.00
+    asig = 1.0e-3
+    ax = np.random.normal( acen, asig, nr)
+else:
+    ax = np.ones(nr)
+if VERB: print(ax)
+
+# curvature amplitude
+if CURVATURE:
+    wcen = 0.00
+    wsig = 0.25
+    wx = np.random.normal( wcen, wsig, nr)
+else:
+    wx = np.zeros(nr)
+if VERB: print(wx)
+
+# curvature frequency
+if CURVATURE:
+    fcen = 0.0
+    fsig = 1.0e-3
+    fx = np.random.normal( fcen, fsig, nr)
+else:
+    fx = np.zeros(nr)
+if VERB: print(fx)
+
+# ------------------------------------------------------------
+# ------------------------------------------------------------
+# make data
+
+for jr in range(nr): # loop over realizations
+    rtag = "-r%03d"%jr
+
+    for ic in range(nc): # loop over carriers
+        ctag = "%d"%ic
+
+        fPeak = par['fPeak'] / np.power(2,ic)
+
+        Flow('dat'+ctag+rtag,None,
+            '''  
+            math n1=%d o1=%g d1=%g label1=%s unit1=%s
+                 n2=%d o2=%g d2=%g label2=%s unit2=%s
+            output="cos( 2 * (%g)   * (%g)   * (x1 - (%g) + (%g) * x2 + (%g)*cos(2*(%g) * x2*(%g)) )  ) *
+                    exp(-2 * (%g)^2 * (%g)^2 * (x1 - (%g) + (%g) * x2 + (%g)*cos(2*(%g) * x2*(%g)) )^2) * 
+                    (1.0 + 0.5 * cos(2*(%g) * x2*(%g)))" 
+            '''%( par['nt'],par['ot'],par['dt'],par['lt'],par['ut'],
+                    par['nx'],par['ox'],par['dx'],par['lx'],par['ux'],
+                    np.pi, fPeak,          tx[jr], px[jr], wx[jr], np.pi, fx[jr],
+                    np.pi, par['fBand']/4, tx[jr], px[jr], wx[jr], np.pi, fx[jr],
+                    np.pi, ax[jr]
+                ) 
+            )
+
+# ------------------------------------------------------------
+# ------------------------------------------------------------
+# concatenate data
+
+for ic in range(nc): # loop over carriers
+    ctag = "%d"%ic
+
+    Flow('dat'+ctag,['dat'+ctag+"-r%03d"%jr for jr in range(nr)],
+        'cat axis=3 space=n ${SOURCES[1:%d]}'%nr)
+    
+    Flow('byt'+ctag,'dat'+ctag,'byte gainpanel=a pclip=100')
+
+# ------------------------------------------------------------
+# ------------------------------------------------------------
+# plot data
+
+if PLOT:
+    for jr in range(nr): # loop over realizations
+        rtag = "-r%03d"%jr
+
+        for ic in range(nc): # loop over carriers
+            ctag = "%d"%ic
+
+            if ic == 0: Plot('dat'+ctag+rtag,'byt'+ctag,
+                                'window n3=1 f3=%d |'%jr + 
+                                wplot.dgrey2d('grid=y',par))
+            else:       Plot('dat'+ctag+rtag,'byt'+ctag,
+                                'window n3=1 f3=%d |'%jr + 
+                                wplot.dgrey2d('wantaxis=n',par))
+
+        pplot.multip('dat'+rtag,['dat0'+rtag,'dat1'+rtag,'dat2'+rtag],1,3, 1.0,1.0, 0.0,-3.75)
+        Result('dat'+rtag,'dat'+rtag,'Overlay')
+
+End()

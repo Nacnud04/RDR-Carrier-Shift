@@ -13,16 +13,17 @@ def yprint(t):
 
 # --- LOAD HL DATASETS ---
 yprint("Loading HL datasets...")
-dataset = io.dataset(dir='../../data/overlap', pair=(0, 2))
+direc = "../../data/512512/overlap"
+dataset = io.dataset(dir=direc, pair=(0, 2))
 hl_train_dataset = dataset.tf_dataset(batch_size)
-dataset = io.dataset(dir='../../data/overlap/valid', pair=(0, 2))
+dataset = io.dataset(dir=f'{direc}/valid', pair=(0, 2))
 hl_valid_dataset = dataset.tf_dataset(batch_size)
 
 # --- LOAD HM DATASETS ---
 yprint("Loading HM datasets...")
-dataset = io.dataset(dir='../../data/overlap', pair=(0, 1))
+dataset = io.dataset(dir=direc, pair=(0, 1))
 hm_train_dataset = dataset.tf_dataset(batch_size)
-dataset = io.dataset(dir='../../data/overlap/valid', pair=(0, 1))
+dataset = io.dataset(dir=f'{direc}/valid', pair=(0, 1))
 hm_valid_dataset = dataset.tf_dataset(batch_size)
 
 print("[bold green]Finished loading datasets![/bold green]")
@@ -47,7 +48,7 @@ callbacks = [
     )
 ]
 
-epochs = 100
+epochs = 200
 
 # --- TRAIN HL MODEL ---
 print("[bold green]TRAINING HL MODEL![/bold green]")
