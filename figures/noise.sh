@@ -1,0 +1,1 @@
+sfmath n1=1024 n2=512 o1=0 o2=-1000 d1=0.05 d2=4 label1='t' unit1='us' label2='x' unit2='.' output=0 | sfnoise seed=0 range=0.05 var=0.1 rep=y | sfconv filt=../data/1024512/overlap/valid/wav.rsf trans=y | sfgrey | xtpen
