@@ -121,11 +121,11 @@ class dataset():
             x = np.random.randint(0, self.cs.count, 1)[0]
             self.cs.show(x)
 
-    def tf_dataset(self, batch_size):
+    def tf_dataset(self, batch_size, img_size):
 
         def _set_shapes(A, B):
-            A.set_shape((512, 512, 1))
-            B.set_shape((512, 512, 1))
+            A.set_shape(img_size)
+            B.set_shape(img_size)
             return A, B
 
         indices = tf.data.Dataset.from_tensor_slices(tf.range(self.cs.count))
