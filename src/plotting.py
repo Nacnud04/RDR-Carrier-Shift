@@ -108,3 +108,13 @@ def plt_training(files, datasets, preds, i):
     ani = FuncAnimation(fig, update, frames=len(files))
 
     ani.save('train_animation.gif', writer='pillow', fps=3)
+
+
+from PIL import Image
+def export_image(h, filename):
+
+    h = np.squeeze(h)
+    normalized_data = (255 * (h - h.min()) / (h.max() - h.min())).astype(np.uint8)
+
+    image = Image.fromarray(normalized_data.T, mode='L')
+    image.save(filename)

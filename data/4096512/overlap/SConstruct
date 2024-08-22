@@ -39,7 +39,7 @@ par['labelattr'] += ' labelsz=5 labelfat=2 '
 # ------------------------------------------------------------
 nr = 3200 # number of realizations
 nc =   3  # number of carriers
-nk = [int(1+10*random()) for r in range(nr)]
+nk = [int(1+20*random()) for r in range(nr)]
 total = sum(nk)
 
 # time
