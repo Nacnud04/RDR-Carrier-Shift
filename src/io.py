@@ -3,13 +3,37 @@
 import rsf.api as rsf
 import numpy as np
 import matplotlib.pyplot as plt
-import time
 
-import keras
-from tensorflow import data as tf_data
-from tensorflow import image as tf_image
-from tensorflow import io as tf_io
-import tensorflow as tf
+def save_rsf_2D(data, path, d1=None, d2=None, o1=None, o2=None,
+                label1=None, label2=None, unit1=None, unit2=None):
+    
+    Fo = rsf.Output(path)
+
+    Fo.put("n1", data.shape[1])
+    Fo.put("n2", data.shape[0])
+
+    if d1:
+        Fo.put("d1", d1)
+    if d2:
+        Fo.put("d2", d2)
+    if o1:
+        Fo.put("o1", o1)
+    if o2:
+        Fo.put("o2", o2)
+    if label1:
+        Fo.put("label1", label1)
+    if label2:
+        Fo.put("label2", label2)
+    if unit1:
+        Fo.put("unit1", unit1)
+    if unit2:
+        Fo.put("unit2", unit2)
+
+    Fo.write(data)
+
+    Fo.close()
+
+
 
 # class which quickly reads in rsf files into numpy arrays
 class rsffile():
@@ -92,6 +116,20 @@ class carrierset():
     
 
 class dataset():
+
+    _modules_imported = False
+
+    def __new__(cls, *args, **kwargs):
+        if not cls._modules_imported:
+            cls._perform_imports()
+            cls._modules_imported = True
+        return super(dataset, cls).__new__(cls)
+
+    @classmethod
+    def _perform_imports(cls):
+        global tf_data, tf
+        from tensorflow import data as tf_data
+        import tensorflow as tf
 
     def __init__(self, dir, pair=(0, 1)):
 
