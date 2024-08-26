@@ -43,7 +43,7 @@ callbacks = [
 
 print("[bold green]Finished building model![/bold green]")
 
-epochs = 50
+epochs = 500
 
 # --- TRAIN HL MODEL ---
 
