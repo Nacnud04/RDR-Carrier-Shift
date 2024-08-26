@@ -56,11 +56,17 @@ class rsffile():
         self.lx = f.string('label2')
         self.ux = f.string('unit2')
 
-        # other axis which is a bunch of different examples stacked on each other
-        self.nc = f.int('n3')
+        if f.int('n3'):
 
-        # develop empty array to house data
-        self.amps = np.zeros((self.nc, self.nx, self.nt, 1), dtype='float32')
+            # other axis which is a bunch of different examples stacked on each other
+            self.nc = f.int('n3')
+
+            # develop empty array to house data
+            self.amps = np.zeros((self.nc, self.nx, self.nt, 1), dtype='float32')
+
+        else:
+
+            self.amps = np.zeros((self.nx, self.nt), dtype='float32')
 
         # load in data
         f.read(self.amps)
