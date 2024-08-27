@@ -33,8 +33,6 @@ def save_rsf_2D(data, path, d1=None, d2=None, o1=None, o2=None,
 
     Fo.close()
 
-
-
 # class which quickly reads in rsf files into numpy arrays
 class rsffile():
 
@@ -185,3 +183,157 @@ class dataset():
         
         return tfdataset.batch(batch_size)
     
+import glob
+
+class ClutterSim():
+
+    _modules_imported = False
+
+    def __new__(cls, *args, **kwargs):
+        if not cls._modules_imported:
+            cls._perform_imports()
+            cls._modules_imported = True
+        return super(ClutterSim, cls).__new__(cls)
+
+    @classmethod
+    def _perform_imports(cls):
+        global tf_data, tf
+        from tensorflow import data as tf_data
+        import tensorflow as tf
+
+    def __init__(self, dir="/home/byrne/WORK/research/mars2024/mltrSPSLAKE/T", testing=0.1, nc=3):
+
+        # generate list of rsf files in each carrier set
+        self.cs = [glob.glob(f"{dir}/dsyT{c}-r*.rsf") for c in range(nc)]
+
+        self.N = len(self.cs[0])
+
+    def extract(self, i, carrier):
+
+        # pull correct file out of list of rsf files
+        path = self.cs[carrier][i]
+
+        # turn rsf file into rsffile object to grab data
+        file = rsffile(path)
+
+        return file.amps.T
+    
+    def grab_pair(self, i):
+
+        pair = self.pair
+
+        if len(pair) != 2:
+            raise IndexError(f"A pair can only be of length 2. Received length of: {len(pair)}")
+        
+        A = self.extract(i, pair[0])
+        B = self.extract(i, pair[1])
+
+        return A, B
+    
+    def set_max_dims(self, nx, nt):
+
+        self.maxx = nx # max amount of possible indicies along x
+        self.maxt = nt # max amount of possible indicies along y
+
+        self.img_size = (self.maxt, self.maxx)
+
+    def chop(self, array, verbose=False):
+        
+        nt = array.shape[0]
+        nx = array.shape[1]
+
+        if self.maxt < nt:
+            raise NotImplementedError(f"Time axis too large {self.maxt} < {nt}. \
+                                      Cannot chop radargram by along time axis")
+        
+        elif self.maxx > nx:
+            return [array]
+        
+        sections = 1 + (nx // self.maxx) # how many sections do we divide the radargram into?
+        whitespace = 1 + self.maxx - (nx % self.maxx) # how much 0 padding in the x dimension for the last slice?
+
+        if verbose:
+            print(f"Sections: {sections} | Whitespace: {whitespace}")
+
+        slices = []
+
+        for s in range(sections):
+
+            # start and end of x direction
+            if s == sections - 1: # last section
+                st, en = s * self.maxx, -1 
+            else: 
+                st, en = s * self.maxx, (s + 1) * self.maxx
+
+            if verbose:
+                print(f"st: {st} | en: {en}")
+
+            slice = array[:, st:en] # chop array
+
+            # pad along x
+            if s == sections - 1:
+                slice = np.concatenate((slice, np.zeros((nt, whitespace))), axis=1)
+
+            # pad along y
+            slice = np.concatenate((slice, np.zeros((self.maxt-nt, self.maxx))), axis=0)
+
+            slices.append(slice)
+
+        return slices
+    
+    # load all data into memory and chop it up
+    # that way it can be easily loaded into tf
+    def load(self):
+
+        self.As = [] # source data
+        self.Bs = [] # target data
+
+        for n in range(self.N):
+            
+            print('\n')
+            print(f"Loading... {n}/{self.N}", end="   \r")
+            print('\n')
+
+            A, B = self.grab_pair(n) # grab data
+
+            A = self.chop(A) # chop up A and B
+            B = self.chop(B) # chop up A and B
+
+            # add to data arrays
+            self.As.extend(A)
+            self.Bs.extend(B)
+
+    
+    # --- TENSORFLOW FUNCTIONS ---
+    # make pair tf compatable
+
+    def grab_pair_tf(self, i):
+
+        # turn i into a real number from tensorflow notation
+        i = tf.cast(i, tf.int32).numpy()
+        # grab pair
+        A, B = self.As[i], self.Bs[i]
+        # convert from numpy to tensorflow
+        return tf.convert_to_tensor(A), tf.convert_to_tensor(B)
+    
+    def tf_dataset(self, batch_size, pair=(0, 2)):
+
+        self.pair = pair
+
+        def _set_shapes(A, B):
+            A.set_shape(self.img_size)
+            B.set_shape(self.img_size)
+            return A, B
+
+        indices = tf.data.Dataset.from_tensor_slices(tf.range(len(self.As)))
+
+        tfdataset = indices.map(lambda i: tf.py_function(
+                                func=self.grab_pair_tf,
+                                inp=[i],
+                                Tout=(tf.float32, tf.float32)),  
+                                num_parallel_calls=tf_data.AUTOTUNE)
+        
+        
+        tfdataset = tfdataset.map(_set_shapes, num_parallel_calls=tf.data.AUTOTUNE)
+        
+        return tfdataset.batch(batch_size)
