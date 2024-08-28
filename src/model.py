@@ -60,3 +60,63 @@ def get_model(img_size):
 
     model = keras.Model(inputs, outputs)
     return model
+
+
+def new_model(img_size, model_name, summary=False):
+
+    img_size = (img_size[0], img_size[1], 1)
+
+    model = get_model(img_size)
+
+    if summary:
+        model.summary()
+
+    model.compile(optimizer=keras.optimizers.Adam(1e-4), loss="mean_squared_error")
+
+    callbacks = [
+        keras.callbacks.ModelCheckpoint(
+            filepath="models/"+f"{model_name}"+"_{epoch:04d}.keras",
+            save_best_only=False,
+            save_freq='epoch'
+        )
+    ]
+
+    return model, callbacks
+
+
+def existing_model(prev_model, model_name, summary=False):
+
+    model = keras.saving.load_model(prev_model)
+
+    if summary:
+        model.summary()
+
+    model.compile(optimizer=keras.optimizers.Adam(1e-4), loss="mean_squared_error")
+
+    callbacks = [
+        keras.callbacks.ModelCheckpoint(
+            filepath="models/"+f"{model_name}"+"_{epoch:04d}.keras",
+            save_best_only=False,
+            save_freq='epoch'
+        )
+    ]
+
+    return model, callbacks
+
+
+def train(model, tf_train, tf_test, epochs, callbacks, verbose=1, export_history=True):
+
+    history = model.fit(
+                tf_train,
+                epochs=epochs,
+                validation_data=tf_test,
+                callbacks=callbacks,
+                verbose=verbose,
+            )
+    
+    if export_history:
+
+        import pickle
+
+        with open('training_history.pkl', 'wb') as file:
+            pickle.dump(history.history, file)

@@ -4,6 +4,9 @@ import rsf.api as rsf
 import numpy as np
 import matplotlib.pyplot as plt
 
+import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
+
 def save_rsf_2D(data, path, d1=None, d2=None, o1=None, o2=None,
                 label1=None, label2=None, unit1=None, unit2=None):
     
@@ -201,7 +204,7 @@ class ClutterSim():
         from tensorflow import data as tf_data
         import tensorflow as tf
 
-    def __init__(self, dir="/home/byrne/WORK/research/mars2024/mltrSPSLAKE/T", testing=0.1, nc=3):
+    def __init__(self, dir="/home/byrne/WORK/research/mars2024/mltrSPSLAKE/T", nc=3):
 
         # generate list of rsf files in each carrier set
         self.cs = [glob.glob(f"{dir}/dsyT{c}-r*.rsf") for c in range(nc)]
@@ -216,7 +219,7 @@ class ClutterSim():
         # turn rsf file into rsffile object to grab data
         file = rsffile(path)
 
-        return file.amps.T
+        return file.amps
     
     def grab_pair(self, i):
 
@@ -235,12 +238,12 @@ class ClutterSim():
         self.maxx = nx # max amount of possible indicies along x
         self.maxt = nt # max amount of possible indicies along y
 
-        self.img_size = (self.maxt, self.maxx)
+        self.img_size = (self.maxx, self.maxt)
 
     def chop(self, array, verbose=False):
         
-        nt = array.shape[0]
-        nx = array.shape[1]
+        nt = array.shape[1]
+        nx = array.shape[0]
 
         if self.maxt < nt:
             raise NotImplementedError(f"Time axis too large {self.maxt} < {nt}. \
@@ -268,14 +271,14 @@ class ClutterSim():
             if verbose:
                 print(f"st: {st} | en: {en}")
 
-            slice = array[:, st:en] # chop array
+            slice = array[st:en, :] # chop array
 
             # pad along x
             if s == sections - 1:
-                slice = np.concatenate((slice, np.zeros((nt, whitespace))), axis=1)
+                slice = np.concatenate((slice, np.zeros((whitespace, nt))), axis=0)
 
-            # pad along y
-            slice = np.concatenate((slice, np.zeros((self.maxt-nt, self.maxx))), axis=0)
+            # pad along t
+            slice = np.concatenate((slice, np.zeros((self.maxx, self.maxt-nt))), axis=1)
 
             slices.append(slice)
 
@@ -283,18 +286,20 @@ class ClutterSim():
     
     # load all data into memory and chop it up
     # that way it can be easily loaded into tf
-    def load(self):
+    def load(self, pair=(0, 2)):
+        
+        self.pair = pair
 
         self.As = [] # source data
         self.Bs = [] # target data
 
         for n in range(self.N):
             
-            print('\n')
-            print(f"Loading... {n}/{self.N}", end="   \r")
-            print('\n')
+            print(f"Loading... {n+1}/{self.N}", end="   \r")
 
             A, B = self.grab_pair(n) # grab data
+
+            print(f"Chopping... {n+1}/{self.N}", end="   \r")
 
             A = self.chop(A) # chop up A and B
             B = self.chop(B) # chop up A and B
@@ -302,6 +307,8 @@ class ClutterSim():
             # add to data arrays
             self.As.extend(A)
             self.Bs.extend(B)
+
+        print("\n")
 
     
     # --- TENSORFLOW FUNCTIONS ---
@@ -316,24 +323,58 @@ class ClutterSim():
         # convert from numpy to tensorflow
         return tf.convert_to_tensor(A), tf.convert_to_tensor(B)
     
-    def tf_dataset(self, batch_size, pair=(0, 2)):
-
-        self.pair = pair
+    def tf_dataset(self, batch_size, testing, bitdepth=64):
 
         def _set_shapes(A, B):
             A.set_shape(self.img_size)
             B.set_shape(self.img_size)
             return A, B
+        
+        # set bitdepth
+        if bitdepth == 64:
+            bd = tf.float64
+        elif bitdepth == 32:
+            bd = tf.float32
+        
+        # create list of testing indicies
+        seed = 2024
+        np.random.seed(seed)
+        testlen = int(len(self.As) * testing)
+        testing_ids = np.random.randint(0, len(self.As), size=testlen)
+        training_ids = [i for i in range(len(self.As)) if i not in testing_ids]
 
-        indices = tf.data.Dataset.from_tensor_slices(tf.range(len(self.As)))
+        # convert lists to tensors for tf
+        test_ids = tf.convert_to_tensor(testing_ids)
+        train_ids = tf.convert_to_tensor(training_ids)
+
+        # --- LOAD TESTING DATA ---
+
+        indices = tf.data.Dataset.from_tensor_slices(test_ids)
 
         tfdataset = indices.map(lambda i: tf.py_function(
                                 func=self.grab_pair_tf,
                                 inp=[i],
-                                Tout=(tf.float32, tf.float32)),  
+                                Tout=(bd, bd)),  
                                 num_parallel_calls=tf_data.AUTOTUNE)
         
         
         tfdataset = tfdataset.map(_set_shapes, num_parallel_calls=tf.data.AUTOTUNE)
         
-        return tfdataset.batch(batch_size)
+        test = tfdataset.batch(batch_size)
+
+        # --- LOAD TRAINING DATA ---
+
+        indices = tf.data.Dataset.from_tensor_slices(train_ids)
+
+        tfdataset = indices.map(lambda i: tf.py_function(
+                                func=self.grab_pair_tf,
+                                inp=[i],
+                                Tout=(bd, bd)),  
+                                num_parallel_calls=tf_data.AUTOTUNE)
+        
+        
+        tfdataset = tfdataset.map(_set_shapes, num_parallel_calls=tf.data.AUTOTUNE)
+        
+        train = tfdataset.batch(batch_size)
+
+        return train, test
