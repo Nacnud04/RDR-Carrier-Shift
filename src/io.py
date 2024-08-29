@@ -8,7 +8,7 @@ import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
 def save_rsf_2D(data, path, d1=None, d2=None, o1=None, o2=None,
-                label1=None, label2=None, unit1=None, unit2=None):
+                label1=None, label2=None, unit1=None, unit2=None, f=None):
     
     Fo = rsf.Output(path)
 
@@ -31,6 +31,24 @@ def save_rsf_2D(data, path, d1=None, d2=None, o1=None, o2=None,
         Fo.put("unit1", unit1)
     if unit2:
         Fo.put("unit2", unit2)
+
+    if f:
+
+        f = rsf.Input(f)
+
+        # dim 1
+        Fo.put("n1", f.int('n1'))
+        Fo.put("d1", f.float('d1'))
+        Fo.put("o1", f.float('o1'))
+        Fo.put("label1",str(f.string('label1')))
+        Fo.put("unit1",str(f.string('unit1')))
+
+        # dim 2
+        Fo.put("n2", f.int('n2'))
+        Fo.put("d2", f.float('d2'))
+        Fo.put("o2", f.float('o2'))
+        Fo.put("label2",str(f.string('label2')))
+        Fo.put("unit2",str(f.string('unit2')))
 
     Fo.write(data)
 
@@ -245,6 +263,9 @@ class ClutterSim():
         nt = array.shape[1]
         nx = array.shape[0]
 
+        self.fullnt = nt
+        self.fullnx = nx
+
         if self.maxt < nt:
             raise NotImplementedError(f"Time axis too large {self.maxt} < {nt}. \
                                       Cannot chop radargram by along time axis")
@@ -254,6 +275,9 @@ class ClutterSim():
         
         sections = 1 + (nx // self.maxx) # how many sections do we divide the radargram into?
         whitespace = 1 + self.maxx - (nx % self.maxx) # how much 0 padding in the x dimension for the last slice?
+
+        self.sections = sections
+        self.whitespace = whitespace
 
         if verbose:
             print(f"Sections: {sections} | Whitespace: {whitespace}")
@@ -283,6 +307,29 @@ class ClutterSim():
             slices.append(slice)
 
         return slices
+
+
+    def stitch(self, predictions):
+
+        # how many arrays in the output?
+        count = len(predictions) // self.sections
+
+        rdrgrms = []
+
+        # iterate over output images
+        for i in range(count):
+
+            # grab all slices of predicted image to stitch together
+            slices = [predictions[j+i*self.sections] for j in range(self.sections)]
+
+            # stitch
+            output = np.vstack(tuple(slices))
+
+            # chop off whitespace
+            rdrgrms.append(output[:self.fullnx, :self.fullnt])
+
+        return rdrgrms
+
     
     # load all data into memory and chop it up
     # that way it can be easily loaded into tf
@@ -339,13 +386,16 @@ class ClutterSim():
         # create list of testing indicies
         seed = 2024
         np.random.seed(seed)
-        testlen = int(len(self.As) * testing)
-        testing_ids = np.random.randint(0, len(self.As), size=testlen)
-        training_ids = [i for i in range(len(self.As)) if i not in testing_ids]
+        testlen = int(self.N * testing)
+        testing_ids = np.random.randint(0, self.N, size=testlen)
+        self.testids = testing_ids
+        training_ids = [i for i in range(self.N) if i not in testing_ids]
 
         # convert lists to tensors for tf
-        test_ids = tf.convert_to_tensor(testing_ids)
-        train_ids = tf.convert_to_tensor(training_ids)
+        test_slices = [np.arange(self.sections) + i * self.sections for i in testing_ids]
+        test_ids = tf.convert_to_tensor(np.array(test_slices).flatten())
+        train_slices = [np.arange(self.sections) + i * self.sections for i in training_ids]
+        train_ids = tf.convert_to_tensor(np.array(train_slices).flatten())
 
         # --- LOAD TESTING DATA ---
 

@@ -1,0 +1,8 @@
+try:    from rsf.cluster import *
+except: from rsf.proj    import *
+
+import glob
+
+files = glob.glob("mdl-*.rsf")
+
+print(files)
