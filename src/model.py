@@ -62,7 +62,7 @@ def get_model(img_size):
     return model
 
 
-def new_model(img_size, model_name, summary=False):
+def new_model(img_size, model_name, summary=False, lr=1e-4):
 
     img_size = (img_size[0], img_size[1], 1)
 
@@ -71,7 +71,7 @@ def new_model(img_size, model_name, summary=False):
     if summary:
         model.summary()
 
-    model.compile(optimizer=keras.optimizers.Adam(1e-4), loss="mean_squared_error")
+    model.compile(optimizer=keras.optimizers.Adam(lr), loss="mean_squared_error")
 
     callbacks = [
         keras.callbacks.ModelCheckpoint(
@@ -84,14 +84,14 @@ def new_model(img_size, model_name, summary=False):
     return model, callbacks
 
 
-def existing_model(prev_model, model_name, summary=False):
+def existing_model(prev_model, model_name, summary=False, lr=1e-4):
 
     model = keras.saving.load_model(prev_model)
 
     if summary:
         model.summary()
 
-    model.compile(optimizer=keras.optimizers.Adam(1e-4), loss="mean_squared_error")
+    model.compile(optimizer=keras.optimizers.Adam(lr), loss="mean_squared_error")
 
     callbacks = [
         keras.callbacks.ModelCheckpoint(

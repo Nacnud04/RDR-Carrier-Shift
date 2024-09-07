@@ -6,3 +6,14 @@ import glob
 files = glob.glob("mdl-*.rsf")
 
 print(files)
+
+lt = 't'
+ut = 'us'
+
+labelattr =' '+'parallel2=n labelsz=6 labelfat=2 titlesz=8 titlefat=2 xll=2.0 yll=1.0 n1tic=80 n2tic=20'+' '
+
+for f in files:
+    f = f.split('.')[0]
+    Plot(f, 'window n2=%d f2=%d min1=2240 max1=2260 |'%(1000,500) +
+            'grey title=%s color=e pclip=99.9 %s'%(f, labelattr) +
+            f'label1={lt}s unit1={ut}s label2="" unit2=""')

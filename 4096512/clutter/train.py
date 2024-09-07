@@ -5,6 +5,7 @@ import sys
 sys.path.insert(0, "../../")
 import src.io as io
 import src.model as m
+from src.plotting import export_image
 
 from rich import print
 
@@ -25,10 +26,25 @@ cs.load()
 # move onto gpu
 tf_train, tf_test = cs.tf_dataset(batch_size, testing=0.1)
 
+# check input output make sense
+i = 10
+for source, target in tf_train.take(i):
+
+    # Convert the TensorFlow tensors to NumPy arrays
+    source_np = source.numpy()
+    target_np = target.numpy()
+
+    print(f"Exporting image {i}")
+
+    export_image(source_np[0,:,:], f"figs/s-r{i:03d}.png", seismic=True)
+    export_image(target_np[0,:,:], f"figs/t-r{i:03d}.png", seismic=True)
+    i += 1
+
 # --- BUILD MODEL ---
 
 print("[yellow]Building model...[/yellow]")
-model, callbacks = m.existing_model("../overlap/models/hl_overlap_0500.keras", "clutter")
+#model, callbacks = m.existing_model("../overlap/models/hl_overlap_0500.keras", "clutter", lr=1e-3)
+model, callbacks = m.new_model(cs.img_size, "clutter", lr=5e-4)
 print("[bold green]Finished building model![/bold green]")
 
 # --- TRAIN MODEL ---

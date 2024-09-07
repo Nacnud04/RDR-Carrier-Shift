@@ -111,10 +111,25 @@ def plt_training(files, datasets, preds, i):
 
 
 from PIL import Image
-def export_image(h, filename):
+def export_image(h, filename, seismic=False):
 
     h = np.squeeze(h)
     normalized_data = (255 * (h - h.min()) / (h.max() - h.min())).astype(np.uint8)
 
-    image = Image.fromarray(normalized_data.T, mode='L')
-    image.save(filename)
+    if not seismic:
+
+        image = Image.fromarray(normalized_data.T, mode='L')
+        image.save(filename)
+
+    else:
+
+        # Apply the seismic colormap
+        colormap = plt.get_cmap('seismic')
+        colored_image = colormap(normalized_data)
+
+        # Convert the colormap output (which is RGBA) to RGB by multiplying by 255
+        rgb_image = (colored_image[:, :, :3] * 255).astype(np.uint8)
+
+        # Create an image from the RGB array
+        image = Image.fromarray(rgb_image)
+        image.save(filename)
