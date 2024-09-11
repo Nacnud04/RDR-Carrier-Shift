@@ -61,19 +61,19 @@ class rsffile():
 
         f = rsf.Input(path)
         
-        # time domain stuff
-        self.nt = f.int('n1')
-        self.dt = f.float('d1')
-        self.ot = f.float('o1')
-        self.lt = f.string('label1')
-        self.ut = f.string('unit1')
-
         # space domain stuff
-        self.nx = f.int('n2')
-        self.dx = f.float('d2')
-        self.ox = f.float('o2')
-        self.lx = f.string('label2')
-        self.ux = f.string('unit2')
+        self.nx = f.int('n1')
+        self.dx = f.float('d1')
+        self.ox = f.float('o1')
+        self.lx = f.string('label1')
+        self.ux = f.string('unit1')
+
+        # time domain stuff
+        self.nt = f.int('n2')
+        self.dt = f.float('d2')
+        self.ot = f.float('o2')
+        self.lt = f.string('label2')
+        self.ut = f.string('unit2')
 
         if f.int('n3'):
 
@@ -81,11 +81,11 @@ class rsffile():
             self.nc = f.int('n3')
 
             # develop empty array to house data
-            self.amps = np.zeros((self.nc, self.nx, self.nt, 1), dtype='float32')
+            self.amps = np.zeros((self.nc, self.nt, self.nx, 1), dtype='float32')
 
         else:
 
-            self.amps = np.zeros((self.nx, self.nt), dtype='float32')
+            self.amps = np.zeros((self.nt, self.nx), dtype='float32')
 
         # load in data
         f.read(self.amps)
@@ -225,7 +225,7 @@ class ClutterSim():
     def __init__(self, dir="/home/byrne/WORK/research/mars2024/mltrSPSLAKE/T", nc=3):
 
         # generate list of rsf files in each carrier set
-        self.cs = [glob.glob(f"{dir}/dsyT{c}-r*.rsf") for c in range(nc)]
+        self.cs = [np.sort(glob.glob(f"{dir}/dsyT{c}-r*.rsf")) for c in range(nc)]
 
         self.N = len(self.cs[0])
 
@@ -392,10 +392,12 @@ class ClutterSim():
         training_ids = [i for i in range(self.N) if i not in testing_ids]
 
         # convert lists to tensors for tf
-        test_slices = [np.arange(self.sections) + i * self.sections for i in testing_ids]
-        test_ids = tf.convert_to_tensor(np.array(test_slices).flatten())
-        train_slices = [np.arange(self.sections) + i * self.sections for i in training_ids]
-        train_ids = tf.convert_to_tensor(np.array(train_slices).flatten())
+        test_slices = np.array([np.arange(self.sections) + i * self.sections for i in testing_ids]).flatten()
+        print(f"Test input: {len(test_slices)}")
+        test_ids = tf.convert_to_tensor(test_slices)
+        train_slices = np.array([np.arange(self.sections) + i * self.sections for i in training_ids]).flatten()
+        print(f"Train input: {len(train_slices)}")
+        train_ids = tf.convert_to_tensor(train_slices)
 
         # --- LOAD TESTING DATA ---
 
