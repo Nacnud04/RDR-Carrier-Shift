@@ -10,6 +10,13 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 def save_rsf_2D(data, path, d1=None, d2=None, o1=None, o2=None,
                 label1=None, label2=None, unit1=None, unit2=None, f=None):
     
+    """
+    Export a 2D numpy array as a .rsf file. Axis deltas, origins, labels
+    and units can be individually specified. If a existing file path is  
+    provided (f) the exported file will use the header from that file to
+    define the axes.  
+    """
+    
     Fo = rsf.Output(path)
 
     Fo.put("n1", data.shape[1])
@@ -32,6 +39,8 @@ def save_rsf_2D(data, path, d1=None, d2=None, o1=None, o2=None,
     if unit2:
         Fo.put("unit2", unit2)
 
+    # if an existing rsf file is given
+    # use the axis from that file on the exported file
     if f:
 
         f = rsf.Input(f)
@@ -57,7 +66,7 @@ def save_rsf_2D(data, path, d1=None, d2=None, o1=None, o2=None,
 # class which quickly reads in rsf files into numpy arrays
 class rsffile():
 
-    def __init__(self, path):
+    def __init__(self, path, dtype='float32'):
 
         f = rsf.Input(path)
         
@@ -77,15 +86,15 @@ class rsffile():
 
         if f.int('n3'):
 
-            # other axis which is a bunch of different examples stacked on each other
+            # other axis which is a bunch of different examples stacked on each other (in this instance)
             self.nc = f.int('n3')
 
-            # develop empty array to house data
-            self.amps = np.zeros((self.nc, self.nt, self.nx, 1), dtype='float32')
+            # form empty array to house data
+            self.amps = np.zeros((self.nc, self.nt, self.nx, 1), dtype=dtype)
 
         else:
 
-            self.amps = np.zeros((self.nt, self.nx), dtype='float32')
+            self.amps = np.zeros((self.nt, self.nx), dtype=dtype)
 
         # load in data
         f.read(self.amps)

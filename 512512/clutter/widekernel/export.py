@@ -2,7 +2,7 @@
 # --- INITIAL IMPORTS ---
 
 import sys
-sys.path.insert(0, "../../")
+sys.path.insert(0, "../../../")
 import src.io as io
 
 import os
