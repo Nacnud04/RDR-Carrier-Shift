@@ -1,14 +1,19 @@
 import keras
 from keras import layers
 
-def get_model(img_size):
+def get_model(img_size, par={}):
 
     inputs = keras.Input(shape=img_size)
+
+    if "kernel_size" in par.keys():
+        ks = par["kernel_size"]
+    else:
+        ks = 3
 
     ### First half of model, downsampling inputs
 
     # entry block
-    x = layers.Conv2D(32, 3, strides=2, padding="same")(inputs)
+    x = layers.Conv2D(32, ks, strides=2, padding="same")(inputs)
     x = layers.BatchNormalization()(x)
     x = layers.Activation("relu")(x)
 
@@ -18,11 +23,11 @@ def get_model(img_size):
     for filters in [64, 128, 256]:
 
         x = layers.Activation('relu')(x)
-        x = layers.SeparableConv2D(filters, 3, padding="same")(x)
+        x = layers.SeparableConv2D(filters, ks, padding="same")(x)
         x = layers.BatchNormalization()(x)
 
         x = layers.Activation("relu")(x)
-        x = layers.SeparableConv2D(filters, 3, padding="same")(x)
+        x = layers.SeparableConv2D(filters, ks, padding="same")(x)
         x = layers.BatchNormalization()(x)
 
         x = layers.MaxPooling2D(3, strides=2, padding="same")(x)
@@ -41,11 +46,11 @@ def get_model(img_size):
     for filters in [256, 128, 64, 32]:
 
         x = layers.Activation("relu")(x)
-        x = layers.Conv2DTranspose(filters, 3, padding="same")(x)
+        x = layers.Conv2DTranspose(filters, ks, padding="same")(x)
         x = layers.BatchNormalization()(x)
 
         x = layers.Activation("relu")(x)
-        x = layers.Conv2DTranspose(filters, 3, padding="same")(x)
+        x = layers.Conv2DTranspose(filters, ks, padding="same")(x)
         x = layers.BatchNormalization()(x)
 
         # Project residual
@@ -56,17 +61,17 @@ def get_model(img_size):
 
 
     # unsure how much this layer actually does
-    outputs = layers.Conv2D(1, 3, activation="linear", padding="same")(x)
+    outputs = layers.Conv2D(1, ks, activation="linear", padding="same")(x)
 
     model = keras.Model(inputs, outputs)
     return model
 
 
-def new_model(img_size, model_name, summary=False, lr=1e-4):
+def new_model(img_size, model_name, summary=False, lr=1e-4, par={}):
 
     img_size = (img_size[0], img_size[1], 1)
 
-    model = get_model(img_size)
+    model = get_model(img_size, par=par)
 
     if summary:
         model.summary()
