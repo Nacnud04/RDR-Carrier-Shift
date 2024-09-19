@@ -43,13 +43,13 @@ for source, target in tf_train.take(i):
 # --- BUILD MODEL ---
 
 print("[yellow]Building model...[/yellow]")
-model, callbacks = m.existing_model("../padding/models/hl_pad_050.keras", "clutter", lr=1e-3)
-#model, callbacks = m.new_model(cs.img_size, "clutter", lr=1e-3)
+#model, callbacks = m.existing_model("../padding/models/hl_pad_050.keras", "clutter", lr=1e-3)
+model, callbacks = m.new_model(cs.img_size, "clutter", lr=1e-3)
 print("[bold green]Finished building model![/bold green]")
 
 # --- TRAIN MODEL ---
 
-epochs = 200
+epochs = 500
 print("[bold green]TRAINING MODEL![/bold green]")
 m.train(model, tf_train, tf_test, epochs, callbacks)
 

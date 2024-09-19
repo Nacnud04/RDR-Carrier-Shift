@@ -236,7 +236,14 @@ class ClutterSim():
         # generate list of rsf files in each carrier set
         self.cs = [np.sort(glob.glob(f"{dir}/dsyT{c}-r*.rsf")) for c in range(nc)]
 
-        self.N = len(self.cs[0])
+        self.N = len(self.cs[2])
+
+        # max file size
+        maxfiles = 400
+        if maxfiles < self.N: 
+            self.N = maxfiles
+        print(f'n: {self.N}')
+
 
     def extract(self, i, carrier):
 

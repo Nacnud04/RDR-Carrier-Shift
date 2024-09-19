@@ -15,7 +15,7 @@ import src.io as io
 
 # --- Open outputs into array ---
 
-modeldir = "../512512/clutter/"
+modeldir = "../512512/clutter/widekernel/"
 files = glob(f"{modeldir}outputs/*.rsf")
 outputs = [io.rsffile(f"{f}").amps for f in files]
 
