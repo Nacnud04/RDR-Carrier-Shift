@@ -5,7 +5,7 @@ import sys
 sys.path.insert(0, "../../")
 import src.io as io
 import src.model as m
-from src.plotting import export_image
+from src.plotting import export_image, export_gif
 
 from rich import print
 
@@ -27,8 +27,9 @@ cs.load()
 tf_train, tf_test = cs.tf_dataset(batch_size, testing=0.1)
 
 # check input output make sense
-i = 10
-for source, target in tf_train.take(i):
+shufflecount = 10
+i = 0
+for source, target in tf_train.shuffle(100, reshuffle_each_iteration=True):
 
     # Convert the TensorFlow tensors to NumPy arrays
     source_np = source.numpy()
@@ -36,9 +37,11 @@ for source, target in tf_train.take(i):
 
     print(f"Exporting image {i}")
 
-    export_image(source_np[0,:,:], f"figs/s-r{i:03d}.png", seismic=True)
-    export_image(target_np[0,:,:], f"figs/t-r{i:03d}.png", seismic=True)
+    export_gif(source_np[0,:,:], target_np[0,:,:], f"figs/r{i:03d}.gif", seismic=True)
+
     i += 1
+
+sys.exit()
 
 # --- BUILD MODEL ---
 
@@ -49,7 +52,7 @@ print("[bold green]Finished building model![/bold green]")
 
 # --- TRAIN MODEL ---
 
-epochs = 500
+epochs = 1000
 print("[bold green]TRAINING MODEL![/bold green]")
 m.train(model, tf_train, tf_test, epochs, callbacks)
 

@@ -133,3 +133,33 @@ def export_image(h, filename, seismic=False):
         # Create an image from the RGB array
         image = Image.fromarray(rgb_image)
         image.save(filename)
+
+
+# Updated function to create a GIF alternating between two images
+def export_gif(image1, image2, filename, seismic=False, duration=500):
+    
+    # Normalize both images to 8-bit grayscale
+    def normalize_image(h):
+        h = np.squeeze(h)
+        return (255 * (h - h.min()) / (h.max() - h.min())).astype(np.uint8)
+    
+    img1_normalized = normalize_image(image1)
+    img2_normalized = normalize_image(image2)
+    
+    if not seismic:
+        img1 = Image.fromarray(img1_normalized.T, mode='L')
+        img2 = Image.fromarray(img2_normalized.T, mode='L')
+    else:
+        # Apply seismic colormap
+        colormap = plt.get_cmap('seismic')
+        img1_colored = colormap(img1_normalized)
+        img2_colored = colormap(img2_normalized)
+
+        img1 = Image.fromarray((img1_colored[:, :, :3] * 255).astype(np.uint8))
+        img2 = Image.fromarray((img2_colored[:, :, :3] * 255).astype(np.uint8))
+
+    # Create GIF with both images alternating
+    img1.save(
+        filename, save_all=True, append_images=[img2],
+        duration=duration, loop=0
+    )

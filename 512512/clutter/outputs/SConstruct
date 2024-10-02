@@ -5,6 +5,7 @@ import glob
 
 files = glob.glob("mdl-*.rsf")
 
+print("Files:")
 print(files)
 
 lt = 't'

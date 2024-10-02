@@ -239,11 +239,13 @@ class ClutterSim():
         self.N = len(self.cs[2])
 
         # max file size
-        maxfiles = 400
+        maxfiles = 1500
         if maxfiles < self.N: 
             self.N = maxfiles
         print(f'n: {self.N}')
 
+        for i in range(nc):
+            self.cs[i] = self.cs[i][:maxfiles]
 
     def extract(self, i, carrier):
 
@@ -409,9 +411,12 @@ class ClutterSim():
 
         # convert lists to tensors for tf
         test_slices = np.array([np.arange(self.sections) + i * self.sections for i in testing_ids]).flatten()
+        self.lentest = len(test_slices)
         print(f"Test input: {len(test_slices)}")
         test_ids = tf.convert_to_tensor(test_slices)
+        
         train_slices = np.array([np.arange(self.sections) + i * self.sections for i in training_ids]).flatten()
+        self.lentrain = len(train_slices)
         print(f"Train input: {len(train_slices)}")
         train_ids = tf.convert_to_tensor(train_slices)
 
