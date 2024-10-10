@@ -26,28 +26,52 @@ cs.load()
 # move onto gpu
 tf_train, tf_test = cs.tf_dataset(batch_size, testing=0.1)
 
-# check input output make sense
-shufflecount = 10
-i = 0
-for source, target in tf_train.shuffle(100, reshuffle_each_iteration=True):
+# --- check last N input output pairs --- 
 
-    # Convert the TensorFlow tensors to NumPy arrays
-    source_np = source.numpy()
-    target_np = target.numpy()
+# find batches in dataset
+batches = tf_train.cardinality().numpy()
 
-    print(f"Exporting image {i}")
+print(f"{(batches * batch_size) // cs.sections} input clutter sims as predicted by batch size")
 
-    export_gif(source_np[0,:,:], target_np[0,:,:], f"figs/r{i:03d}.gif", seismic=True)
+# grab last N batches
+N = 3
+last_N_pairs = tf_train.skip(batches - N)
 
-    i += 1
+view_only = False
 
-sys.exit()
+i = (batches - N) * batch_size
+for source, target in last_N_pairs:
+
+    for j in range(source.shape[0]):
+
+        filenum = cs.trainids[i // cs.sections]
+        sectnum = int(i % cs.sections)
+
+        # Convert the TensorFlow tensors to NumPy arrays
+        source_np = source.numpy()
+        target_np = target.numpy()
+
+        print(f"Exporting image figs/{filenum:03d}-{sectnum}.gif")
+
+        export_gif(source_np[j,:,:], target_np[j,:,:], f"figs/{filenum:03d}-{sectnum}.gif", seismic=True)
+
+        i += 1
+
+if view_only:
+    sys.exit()
 
 # --- BUILD MODEL ---
 
 print("[yellow]Building model...[/yellow]")
-#model, callbacks = m.existing_model("../padding/models/hl_pad_050.keras", "clutter", lr=1e-3)
-model, callbacks = m.new_model(cs.img_size, "clutter", lr=1e-3)
+
+par = {
+    "kernel_size":3,
+    "filt_depth":5,
+    "clipnorm":1e-4
+}
+
+model, callbacks = m.new_model(cs.img_size, "clutter", lr=1e-4, par=par)
+
 print("[bold green]Finished building model![/bold green]")
 
 # --- TRAIN MODEL ---

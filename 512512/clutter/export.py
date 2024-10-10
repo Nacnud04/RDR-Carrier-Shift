@@ -18,7 +18,7 @@ batch_size = 8
 testing = 0.1
 
 # create cluttersim object
-cs = io.ClutterSim()
+cs = io.ClutterSim(maxfiles=400)
 print(f"{int(cs.N*testing)} testing cluttersims")
 
 # define model dims
@@ -33,7 +33,7 @@ _, tf_test = cs.tf_dataset(batch_size, testing=testing)
 # --- LOAD MODEL ---
 
 import tensorflow as tf
-file = "models/clutter_0500.keras"
+file = "models/clutter_0716.keras"
 model = tf.keras.models.load_model(file)
 
 # run model

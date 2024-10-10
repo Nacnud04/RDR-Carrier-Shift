@@ -10,25 +10,41 @@ def get_model(img_size, par={}):
     else:
         ks = 3
 
+    if "filt_depth" in par.keys():
+        if par["filt_depth"] == 3:
+            filts = [64, 128, 256]
+        if par["filt_depth"] == 4:
+            filts = [64, 128, 256, 512]
+        if par["filt_depth"] == 5:
+            filts = [64, 128, 256, 512, 1024]
+    else:
+        filts = [64, 128, 256]
+
+    if "eps" in par.keys():
+        eps = par["eps"]
+    else:
+        eps = 0.001
+
     ### First half of model, downsampling inputs
 
     # entry block
     x = layers.Conv2D(32, ks, strides=2, padding="same")(inputs)
-    x = layers.BatchNormalization()(x)
+    x = layers.BatchNormalization(epsilon=eps)(x)
     x = layers.Activation("relu")(x)
 
     previous_block_activation = x      # set aside residual
 
     # blocks 1, 2 and 3 are the same apart from the feature depth
-    for filters in [64, 128, 256]:
+    
+    for filters in filts:
 
         x = layers.Activation('relu')(x)
         x = layers.SeparableConv2D(filters, ks, padding="same")(x)
-        x = layers.BatchNormalization()(x)
+        x = layers.BatchNormalization(epsilon=eps)(x)
 
         x = layers.Activation("relu")(x)
         x = layers.SeparableConv2D(filters, ks, padding="same")(x)
-        x = layers.BatchNormalization()(x)
+        x = layers.BatchNormalization(epsilon=eps)(x)
 
         x = layers.MaxPooling2D(3, strides=2, padding="same")(x)
 
@@ -43,15 +59,15 @@ def get_model(img_size, par={}):
 
     ### Second half of model. Upsampling
 
-    for filters in [256, 128, 64, 32]:
+    for filters in filts + [32]:
 
         x = layers.Activation("relu")(x)
         x = layers.Conv2DTranspose(filters, ks, padding="same")(x)
-        x = layers.BatchNormalization()(x)
+        x = layers.BatchNormalization(epsilon=eps)(x)
 
         x = layers.Activation("relu")(x)
         x = layers.Conv2DTranspose(filters, ks, padding="same")(x)
-        x = layers.BatchNormalization()(x)
+        x = layers.BatchNormalization(epsilon=eps)(x)
 
         # Project residual
         residual = layers.Conv2DTranspose(filters, 1, strides=2, padding="same")(previous_block_activation)
@@ -76,7 +92,12 @@ def new_model(img_size, model_name, summary=False, lr=1e-4, par={}):
     if summary:
         model.summary()
 
-    model.compile(optimizer=keras.optimizers.Adam(lr), loss="mean_squared_error")
+    if "clipnorm" in par.keys():
+        clipn = par["clipnorm"]
+    else:
+        clipn = None
+
+    model.compile(optimizer=keras.optimizers.Adam(lr, clipnorm=clipn), loss="mean_squared_error")
 
     callbacks = [
         keras.callbacks.ModelCheckpoint(

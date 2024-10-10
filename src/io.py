@@ -231,26 +231,39 @@ class ClutterSim():
         from tensorflow import data as tf_data
         import tensorflow as tf
 
-    def __init__(self, dir="/home/byrne/WORK/research/mars2024/mltrSPSLAKE/T", nc=3):
+    def __init__(self, dir="/home/byrne/WORK/research/mars2024/mltrSPSLAKE/T", nc=3, maxfiles=1500, cropfilelist=False):
 
         # generate list of rsf files in each carrier set
         self.cs = [np.sort(glob.glob(f"{dir}/dsyT{c}-r*.rsf")) for c in range(nc)]
 
+        for c, j in zip(self.cs, range(nc)):
+            print(f"Found {len(c)} realizations of carrier {j}")
+
+        self.ids = [[int(f.split("-r")[1].split(".")[0]) for f in c] for c in self.cs]
+        self.ids0 = np.array(self.ids[0])
+        self.ids2 = np.array(self.ids[2])
+
         self.N = len(self.cs[2])
 
         # max file size
-        maxfiles = 1500
+        maxfiles = maxfiles
         if maxfiles < self.N: 
             self.N = maxfiles
         print(f'n: {self.N}')
 
-        for i in range(nc):
-            self.cs[i] = self.cs[i][:maxfiles]
+        # crop file list (this can cause issues if files are not in order
+        # and the maxfile count is less than the total filecount)
+        if cropfilelist:
+            for i in range(nc):
+                self.cs[i] = self.cs[i][:maxfiles]
 
     def extract(self, i, carrier):
 
         # pull correct file out of list of rsf files
-        path = self.cs[carrier][i]
+        if carrier == 0:
+            path = self.cs[carrier][np.where(self.ids0 == i)][0]
+        elif carrier == 2:
+            path = self.cs[carrier][np.where(self.ids2 == i)][0]
 
         # turn rsf file into rsffile object to grab data
         file = rsffile(path)
@@ -314,6 +327,9 @@ class ClutterSim():
                 print(f"st: {st} | en: {en}")
 
             slice = array[st:en, :] # chop array
+
+            # set max as one
+            slice /= np.max(slice)
 
             # pad along x
             if s == sections - 1:
@@ -408,13 +424,14 @@ class ClutterSim():
         testing_ids = np.random.randint(0, self.N, size=testlen)
         self.testids = testing_ids
         training_ids = [i for i in range(self.N) if i not in testing_ids]
+        self.trainids = training_ids
 
         # convert lists to tensors for tf
         test_slices = np.array([np.arange(self.sections) + i * self.sections for i in testing_ids]).flatten()
         self.lentest = len(test_slices)
         print(f"Test input: {len(test_slices)}")
         test_ids = tf.convert_to_tensor(test_slices)
-        
+
         train_slices = np.array([np.arange(self.sections) + i * self.sections for i in training_ids]).flatten()
         self.lentrain = len(train_slices)
         print(f"Train input: {len(train_slices)}")
@@ -433,10 +450,11 @@ class ClutterSim():
         
         tfdataset = tfdataset.map(_set_shapes, num_parallel_calls=tf.data.AUTOTUNE)
         
-        test = tfdataset.batch(batch_size)
+        test = tfdataset.batch(batch_size, drop_remainder=True)
 
         # --- LOAD TRAINING DATA ---
 
+        print(f"Train input cluttersims: {len(train_slices) // self.sections}")
         indices = tf.data.Dataset.from_tensor_slices(train_ids)
 
         tfdataset = indices.map(lambda i: tf.py_function(
@@ -448,6 +466,6 @@ class ClutterSim():
         
         tfdataset = tfdataset.map(_set_shapes, num_parallel_calls=tf.data.AUTOTUNE)
         
-        train = tfdataset.batch(batch_size)
+        train = tfdataset.batch(batch_size, drop_remainder=True)
 
         return train, test
