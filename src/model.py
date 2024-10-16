@@ -25,10 +25,18 @@ def get_model(img_size, par={}):
     else:
         eps = 0.001
 
+    strides = 2
+    if img_size[0] == 1:
+        ks = (1, ks)
+        strides = (1, strides)
+
+    print(ks)
+
+
     ### First half of model, downsampling inputs
 
     # entry block
-    x = layers.Conv2D(32, ks, strides=2, padding="same")(inputs)
+    x = layers.Conv2D(32, ks, strides=strides, padding="same")(inputs)
     x = layers.BatchNormalization(epsilon=eps)(x)
     x = layers.Activation("relu")(x)
 
@@ -46,10 +54,10 @@ def get_model(img_size, par={}):
         x = layers.SeparableConv2D(filters, ks, padding="same")(x)
         x = layers.BatchNormalization(epsilon=eps)(x)
 
-        x = layers.MaxPooling2D(3, strides=2, padding="same")(x)
+        x = layers.MaxPooling2D(ks, strides=strides, padding="same")(x)
 
         # project residual
-        residual = layers.Conv2D(filters, 1, strides=2, padding="same")(
+        residual = layers.Conv2D(filters, 1, strides=strides, padding="same")(
             previous_block_activation
         )
 
@@ -70,8 +78,8 @@ def get_model(img_size, par={}):
         x = layers.BatchNormalization(epsilon=eps)(x)
 
         # Project residual
-        residual = layers.Conv2DTranspose(filters, 1, strides=2, padding="same")(previous_block_activation)
-        x = layers.Conv2DTranspose(filters, 1, strides=2, padding="same")(x)
+        residual = layers.Conv2DTranspose(filters, 1, strides=strides, padding="same")(previous_block_activation)
+        x = layers.Conv2DTranspose(filters, 1, strides=strides, padding="same")(x)
         x = layers.add([x, residual])  # Add back residual
         previous_block_activation = x  # Set aside next residual
 

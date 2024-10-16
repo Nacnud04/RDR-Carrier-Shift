@@ -163,3 +163,17 @@ def export_gif(image1, image2, filename, seismic=False, duration=500):
         filename, save_all=True, append_images=[img2],
         duration=duration, loop=0
     )
+
+
+def export_trace_img(trace1, trace2, filename, duration=500):
+
+    samples = len(trace1)
+    if len(trace2) != samples:
+        raise ValueError(f"Trace 1 and Trace 2 must be the same length\
+                         . Found lengths {samples} and {len(trace2)}")
+
+    fig, ax = plt.subplots(1, 1, figsize=(15, 4.5))
+    ax.plot(range(samples), trace1, color="red", linewidth=0.75, label="High Carrier")
+    ax.plot(range(samples), trace2, color="blue", linewidth=0.75, label="Low Carrier")
+    plt.savefig(filename)
+    plt.close()

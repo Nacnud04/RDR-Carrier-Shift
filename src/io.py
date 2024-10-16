@@ -59,6 +59,8 @@ def save_rsf_2D(data, path, d1=None, d2=None, o1=None, o2=None,
         Fo.put("label2",str(f.string('label2')))
         Fo.put("unit2",str(f.string('unit2')))
 
+    print(data.dtype)
+
     Fo.write(data)
 
     Fo.close()
@@ -329,7 +331,7 @@ class ClutterSim():
             slice = array[st:en, :] # chop array
 
             # set max as one
-            slice /= np.max(slice)
+            #scrslice /= np.max(slice)
 
             # pad along x
             if s == sections - 1:
@@ -341,6 +343,27 @@ class ClutterSim():
             slices.append(slice)
 
         return slices
+    
+
+    def decompose(self, array):
+
+        nt = array.shape[1]
+        nx = array.shape[0]
+
+        self.fullnt = nt
+        self.fullnx = nx
+
+        self.sections = nx
+
+        if self.maxt < nt:
+            raise NotImplementedError(f"Time axis too large {self.maxt} < {nt}. \
+                                      Cannot chop radargram by along time axis")
+        
+        outputs = []
+        for a in list(array):
+            outputs.append(a.reshape((1, 512)))
+
+        return outputs
 
 
     def stitch(self, predictions):
@@ -348,19 +371,35 @@ class ClutterSim():
         # how many arrays in the output?
         count = len(predictions) // self.sections
 
+        print(f"Stitching into {count} radargrams")
+
         rdrgrms = []
 
         # iterate over output images
         for i in range(count):
 
-            # grab all slices of predicted image to stitch together
-            slices = [predictions[j+i*self.sections] for j in range(self.sections)]
+            if self.maxx != 1:
 
-            # stitch
-            output = np.vstack(tuple(slices))
+                # grab all slices of predicted image to stitch together
+                slices = [predictions[j+i*self.sections] for j in range(self.sections)]
 
-            # chop off whitespace
-            rdrgrms.append(output[:self.fullnx, :self.fullnt])
+                # stitch
+                output = np.vstack(tuple(slices))
+
+                # chop off whitespace
+                rdrgrms.append(output[:self.fullnx, :self.fullnt])
+            
+            else:
+
+                # grab all slices of predicted image to stitch together
+                slices = [predictions[j+i*self.sections] for j in range(self.sections)]
+
+                # stitch
+                output = np.vstack(slices)
+                
+                # split each slice/batch into traces
+
+                rdrgrms.append(output)
 
         return rdrgrms
 
@@ -382,8 +421,18 @@ class ClutterSim():
 
             print(f"Chopping... {n+1}/{self.N}", end="   \r")
 
-            A = self.chop(A) # chop up A and B
-            B = self.chop(B) # chop up A and B
+            if self.maxx > 1:
+                A = self.chop(A) # chop up A and B
+                B = self.chop(B) # chop up A and B
+
+            elif self.maxx == 1:
+                # decompose into individual traces as input
+                A = self.decompose(A)
+                B = self.decompose(B)
+
+            else:
+                raise ValueError(f"Maximum number of traces (maxx/nx) must be \
+                                 >= 1. The received input was {self.maxx}")
 
             # add to data arrays
             self.As.extend(A)
