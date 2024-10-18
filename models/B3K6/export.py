@@ -14,7 +14,7 @@ from rich import print
 
 # --- LOAD DATA INTO TF --- 
 
-batch_size = 8
+batch_size = 64
 testing = 0.1
 
 # create cluttersim object
@@ -33,7 +33,7 @@ _, tf_test = cs.tf_dataset(batch_size, testing=testing)
 # --- LOAD MODEL ---
 
 import tensorflow as tf
-file = "models/clutter_1000.keras"
+file = "models/clutter_0491.keras"
 model = tf.keras.models.load_model(file)
 print(model.summary())
 

@@ -8,7 +8,7 @@ import src.io as io
 import os
 
 # run model on gpu 2
-os.environ["CUDA_VISIBLE_DEVICES"]="1"
+os.environ["CUDA_VISIBLE_DEVICES"]="0"
 
 from rich import print
 
@@ -33,7 +33,7 @@ _, tf_test = cs.tf_dataset(batch_size, testing=testing)
 # --- LOAD MODEL ---
 
 import tensorflow as tf
-file = "models/clutter_1000.keras"
+file = "models/clutter_0492.keras"
 model = tf.keras.models.load_model(file)
 print(model.summary())
 

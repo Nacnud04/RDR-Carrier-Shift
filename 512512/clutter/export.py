@@ -35,6 +35,7 @@ _, tf_test = cs.tf_dataset(batch_size, testing=testing)
 import tensorflow as tf
 file = "models/clutter_0716.keras"
 model = tf.keras.models.load_model(file)
+print(model.summary())
 
 # run model
 preds = model.predict(tf_test)
