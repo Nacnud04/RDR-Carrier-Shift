@@ -233,7 +233,10 @@ class ClutterSim():
         from tensorflow import data as tf_data
         import tensorflow as tf
 
-    def __init__(self, dir="/home/byrne/WORK/research/mars2024/mltrSPSLAKE/T", nc=3, maxfiles=1500, cropfilelist=False):
+    def __init__(self, dir="/home/byrne/WORK/research/mars2024/mltrSPSLAKE/T", nc=3, 
+            maxfiles=1500, cropfilelist=False, combinerandom=False):
+
+        self.random = combinerandom
 
         # generate list of rsf files in each carrier set
         self.cs = [np.sort(glob.glob(f"{dir}/dsyT{c}-r*.rsf")) for c in range(nc)]
@@ -446,11 +449,39 @@ class ClutterSim():
 
     def grab_pair_tf(self, i):
 
-        # turn i into a real number from tensorflow notation
-        i = tf.cast(i, tf.int32).numpy()
-        # grab pair
-        A, B = self.As[i], self.Bs[i]
-        # convert from numpy to tensorflow
+        if self.random:
+
+            # update
+            print(f"Combining random {i}", end="     \r")
+            # how many to randomly sum?
+            n = 3 
+            # seed based on i
+            np.random.seed(i)
+            # get indicies of things to sum
+            sumids = np.random.randint(0, self.lentrain, size=n)
+            # set initial array
+            A, B = self.As[sumids[0]], self.Bs[sumids[0]]
+            # iterate through others
+            for j in range(1, n):
+                idx = self.train_slices[sumids[j]]
+                # detemine roll direction and random flip
+                fac = 1
+                if j % 2 == 0:
+                    fac = -1
+                    self.As[idx] = np.flip(self.As[idx], axis=0)
+                    self.Bs[idx] = np.flip(self.Bs[idx], axis=0)
+                # sum and roll
+                A += np.roll(self.As[idx], fac * self.maxt // 3, axis=1)
+                B += np.roll(self.Bs[idx], fac * self.maxt // 3, axis=1)
+
+        else:
+
+            # turn i into a real number from tensorflow notation
+            i = tf.cast(i, tf.int32).numpy()
+            # grab pair
+            A, B = self.As[i], self.Bs[i]
+            # convert from numpy to tensorflow
+        
         return tf.convert_to_tensor(A), tf.convert_to_tensor(B)
     
     def tf_dataset(self, batch_size, testing, bitdepth=64):
@@ -482,6 +513,7 @@ class ClutterSim():
         test_ids = tf.convert_to_tensor(test_slices)
 
         train_slices = np.array([np.arange(self.sections) + i * self.sections for i in training_ids]).flatten()
+        self.train_slices = train_slices
         self.lentrain = len(train_slices)
         print(f"Train input: {len(train_slices)}")
         train_ids = tf.convert_to_tensor(train_slices)

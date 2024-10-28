@@ -10,5 +10,5 @@ fi
 NUMBER=$1
 
 # Run the command with the input number substituted
-xtpen ~/WORK/research/mars2024/mltrSPSLAKE/T/dsyT0-r${NUMBER}.vpl ~/WORK/research/mars2024/mltrSPSLAKE/T/dsyT2-r${NUMBER}.vpl mdl-${NUMBER}.vpl
+xtpen ~/WORK/research/mars2024/mltrSPSLAKE/T/dsyT2-r${NUMBER}.vpl mdl-${NUMBER}.vpl
 
