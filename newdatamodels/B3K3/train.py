@@ -18,7 +18,7 @@ os.environ["CUDA_VISIBLE_DEVICES"]="1"
 batch_size = 64
 
 # create cluttersim object
-cs = io.ClutterSim(combinerandom=True, maxfiles=50)
+cs = io.ClutterSim(dir="/home/byrne/WORK/research/mars2024/mltrSPSLAKE/M", combinerandom=True)
 print(f"{cs.N} cluttersims detected")
 
 # define model dims
@@ -28,7 +28,7 @@ cs.set_max_dims(512, 512)
 cs.load()
 
 # move onto gpu
-tf_train, tf_test = cs.tf_dataset(batch_size, testing=0.1)
+tf_train, tf_test = cs.tf_dataset(batch_size, testing=0.1, randomtrainsize=1000)
 
 # --- PLOT MODEL IO ---
 
@@ -41,14 +41,14 @@ print(f"{(batches * batch_size) // cs.sections} input clutter sims as predicted 
 N = 1
 last_N_pairs = tf_train.skip(batches - N)
 
-view_only = True
+view_only = False
 
 i = (batches - N) * batch_size
 for source, target in last_N_pairs:
 
     for j in range(source.shape[0]):
 
-        filenum = cs.trainids[i // cs.sections]
+        filenum = cs.trainids[(i // cs.sections) % len(cs.trainids)]
         sectnum = int(i % cs.sections)
 
         # Convert the TensorFlow tensors to NumPy arrays

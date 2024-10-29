@@ -454,13 +454,13 @@ class ClutterSim():
             # update
             print(f"Combining random {i}", end="     \r")
             # how many to randomly sum?
-            n = 3 
+            n = 7 
             # seed based on i
             np.random.seed(i)
             # get indicies of things to sum
             sumids = np.random.randint(0, self.lentrain, size=n)
             # set initial array
-            A, B = self.As[sumids[0]], self.Bs[sumids[0]]
+            A, B = np.copy(self.As[sumids[0]]), np.copy(self.Bs[sumids[0]])
             # iterate through others
             for j in range(1, n):
                 idx = self.train_slices[sumids[j]]
@@ -471,8 +471,8 @@ class ClutterSim():
                     self.As[idx] = np.flip(self.As[idx], axis=0)
                     self.Bs[idx] = np.flip(self.Bs[idx], axis=0)
                 # sum and roll
-                A += np.roll(self.As[idx], fac * self.maxt // 3, axis=1)
-                B += np.roll(self.Bs[idx], fac * self.maxt // 3, axis=1)
+                A += np.roll(self.As[idx], fac * self.maxt // n, axis=1)
+                B += np.roll(self.Bs[idx], fac * self.maxt // n, axis=1)
 
         else:
 
@@ -484,7 +484,7 @@ class ClutterSim():
         
         return tf.convert_to_tensor(A), tf.convert_to_tensor(B)
     
-    def tf_dataset(self, batch_size, testing, bitdepth=64):
+    def tf_dataset(self, batch_size, testing, bitdepth=64, randomtrainsize=None):
 
         def _set_shapes(A, B):
             A.set_shape(self.img_size)
@@ -516,7 +516,11 @@ class ClutterSim():
         self.train_slices = train_slices
         self.lentrain = len(train_slices)
         print(f"Train input: {len(train_slices)}")
-        train_ids = tf.convert_to_tensor(train_slices)
+        if not randomtrainsize:
+            train_ids = tf.convert_to_tensor(train_slices)
+        else:
+            train_slices = np.arange(randomtrainsize * self.sections)
+            train_ids = tf.convert_to_tensor(train_slices)
 
         # --- LOAD TESTING DATA ---
 
