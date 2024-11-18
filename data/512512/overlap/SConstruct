@@ -14,7 +14,7 @@ CURVATURE = True  # add curvature
 
 # ------------------------------------------------------------
 # global parameters
-par = dict( nt=512,  ot=+0.0,     dt=0.05,     lt='t',   ut='us',
+par = dict( nt=512,  ot=+0.0,     dt=0.0892857,     lt='t',   ut='us',
             nx=512,  ox=-1000.0,  dx=4.00,     lx='x',   ux='.',
             verb='y'
         )

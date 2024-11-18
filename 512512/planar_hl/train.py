@@ -1,5 +1,5 @@
 import sys
-sys.path.insert(0, "../")
+sys.path.insert(0, "../../")
 
 import src.io as io
 from src.model import *
@@ -21,14 +21,15 @@ print("[bold green]Finished building model![/bold green]")
 import random
 
 val_samples = 15
+size = (512, 512, 1)
 
 # subset data into training and validation
 print("[yellow]Loading training dataset...[/yellow]")
-dataset = io.dataset(dir='../data/random_planes', pair=(0, 2))
-train_dataset = dataset.tf_dataset(batch_size)
+dataset = io.dataset(dir='../../data/512512/random_planes', pair=(0, 2))
+train_dataset = dataset.tf_dataset(batch_size, size)
 print("[yellow]Loading validation dataset...[/yellow]")
-dataset = io.dataset(dir='../data/random_planes/valid', pair=(0, 2))
-valid_dataset = dataset.tf_dataset(batch_size)
+dataset = io.dataset(dir='../../data/512512/random_planes/valid', pair=(0, 2))
+valid_dataset = dataset.tf_dataset(batch_size, size)
 print("[bold green]Finished loading datasets![/bold green]")
 
 # configure model
@@ -61,8 +62,8 @@ with open('training_history.pkl', 'wb') as file:
     pickle.dump(history.history, file)
 
 # generate predictions for all in validation dataset
-dataset = io.dataset(dir='../data/random_planes/valid', pair=(0, 2))
-val_dataset = dataset.tf_dataset(batch_size)
+dataset = io.dataset(dir='../../data/512512/random_planes/valid', pair=(0, 2))
+val_dataset = dataset.tf_dataset(batch_size, size)
 val_preds = model.predict(val_dataset)
 
 i = 10

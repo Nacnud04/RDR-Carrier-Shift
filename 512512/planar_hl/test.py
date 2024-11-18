@@ -2,7 +2,7 @@ import tensorflow as tf
 from rich import print
 
 import sys
-sys.path.insert(0, "../")
+sys.path.insert(0, "../../")
 import src.io as io
 
 import numpy as np
@@ -10,13 +10,14 @@ import glob
 
 import os
 # run model on gpu 2
-os.environ["CUDA_VISIBLE_DEVICES"]="1"
+os.environ["CUDA_VISIBLE_DEVICES"]="0"
 
 # find all model filepaths
 files = np.sort(glob.glob("models/planar_hl_*.keras"))
 batch_size = 32
 
-dataset = io.dataset(dir='../data/random_planes/valid', pair=(0, 2))
+dataset = io.dataset(dir='../../data/512512/random_planes/valid', pair=(0, 2))
+size = (512, 512, 1)
 
 datasets = []
 preds = []
@@ -24,7 +25,7 @@ for f in np.sort(files):
     print(f"[bold yellow]Loading model:[/bold yellow] [bright_cyan]{f}[/bright_cyan]")
     model = tf.keras.models.load_model(f)
 
-    val_dataset = dataset.tf_dataset(batch_size)
+    val_dataset = dataset.tf_dataset(batch_size, size)
     print(f"[green]Generating predictions...[/green]")
     datasets.append(val_dataset)
     preds.append(model.predict(val_dataset))
@@ -73,6 +74,6 @@ def update(j):
 # Create the animation
 ani = FuncAnimation(fig, update, frames=len(files))
 
-ani.save('train_animation.gif', writer='imagemagick', fps=3)
+ani.save('train_animation_80.gif', writer='imagemagick', fps=3)
 
 plt.show()

@@ -18,12 +18,12 @@ with open('../camp_hm/training_history.pkl', 'rb') as file:
 with open('../noise/hm_training_history.pkl', 'rb') as file:
     prev_history4 = pickle.load(file)
 
-hm_loss = np.concatenate((prev_history1['loss'], prev_history2['loss'], 
-                          prev_history3['loss'], prev_history4['loss'],
-                          loaded_history['loss']))
-hm_val_loss = np.concatenate((prev_history1['val_loss'], prev_history2['val_loss'], 
-                              prev_history3['val_loss'], prev_history4['val_loss'],
-                              loaded_history['val_loss']))
+hm_loss = loaded_history['loss'] #np.concatenate((prev_history1['loss'], prev_history2['loss'], 
+                          #prev_history3['loss'], prev_history4['loss'],
+                          #loaded_history['loss']))
+hm_val_loss = loaded_history['val_loss']#np.concatenate((prev_history1['val_loss'], prev_history2['val_loss'], 
+               #               prev_history3['val_loss'], prev_history4['val_loss'],
+               #               loaded_history['val_loss']))
 
 # Load the history object
 with open('hl_training_history.pkl', 'rb') as file:
@@ -39,12 +39,12 @@ with open('../camp_hl/training_history.pkl', 'rb') as file:
 with open('../noise/hl_training_history.pkl', 'rb') as file:
     prev_history4 = pickle.load(file)
 
-hl_loss = np.concatenate((prev_history1['loss'], prev_history2['loss'], 
-                          prev_history3['loss'], prev_history4['loss'],
-                          loaded_history['loss']))
-hl_val_loss = np.concatenate((prev_history1['val_loss'], prev_history2['val_loss'], 
-                              prev_history3['val_loss'], prev_history4['val_loss'],
-                              loaded_history['val_loss']))
+hl_loss = loaded_history['loss'] #np.concatenate((prev_history1['loss'], prev_history2['loss'], 
+          #                prev_history3['loss'], prev_history4['loss'],
+          #                loaded_history['loss']))
+hl_val_loss = loaded_history['val_loss'] #np.concatenate((prev_history1['val_loss'], prev_history2['val_loss'], 
+               #               prev_history3['val_loss'], prev_history4['val_loss'],
+               #               loaded_history['val_loss']))
 
 # Now you can use the loaded history to plot the graphs
 plt.figure(figsize=(12, 4))

@@ -33,7 +33,7 @@ _, tf_test = cs.tf_dataset(batch_size, testing=testing)
 # --- LOAD MODEL ---
 
 import tensorflow as tf
-file = "models/clutter_0333.keras"
+file = "models/clutter_0493.keras"
 model = tf.keras.models.load_model(file)
 print(model.summary())
 

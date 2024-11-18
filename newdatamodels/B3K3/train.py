@@ -18,7 +18,7 @@ os.environ["CUDA_VISIBLE_DEVICES"]="1"
 batch_size = 64
 
 # create cluttersim object
-cs = io.ClutterSim(dir="/home/byrne/WORK/research/mars2024/mltrSPSLAKE/M", combinerandom=True)
+cs = io.ClutterSim(dir="/home/byrne/WORK/research/mars2024/mltrSPSLAKE/M", combinerandom=True, randomtrainsize=2000)
 print(f"{cs.N} cluttersims detected")
 
 # define model dims
@@ -27,8 +27,10 @@ cs.set_max_dims(512, 512)
 # load all cluttersims
 cs.load()
 
+cs.randomize()
+
 # move onto gpu
-tf_train, tf_test = cs.tf_dataset(batch_size, testing=0.1, randomtrainsize=1000)
+tf_train, tf_test = cs.tf_dataset(batch_size, testing=0.1)
 
 # --- PLOT MODEL IO ---
 

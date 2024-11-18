@@ -138,7 +138,7 @@ def existing_model(prev_model, model_name, summary=False, lr=1e-4):
     return model, callbacks
 
 
-def train(model, tf_train, tf_test, epochs, callbacks, verbose=1, export_history=True):
+def train(model, tf_train, tf_test, epochs, callbacks, verbose=1, export_history=True, existing=False):
 
     history = model.fit(
                 tf_train,
@@ -152,5 +152,10 @@ def train(model, tf_train, tf_test, epochs, callbacks, verbose=1, export_history
 
         import pickle
 
-        with open('training_history.pkl', 'wb') as file:
+        filename = 'training_history.pkl'
+
+        if existing:
+            filename = 'training_history-2.pkl'
+
+        with open(filename, 'wb') as file:
             pickle.dump(history.history, file)

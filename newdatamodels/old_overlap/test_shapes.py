@@ -13,19 +13,34 @@ parser = argparse.ArgumentParser()
 parser.add_argument("-i", "--index", default=10, type=int, help="Index to start at")
 args = parser.parse_args()
 
-model_dirs = ("./", "./")
-models = ("models/hm_overlap_200.keras", "models/hl_overlap_105.keras")
+model_dirs = ("../../512512/overlap/", "../../512512/overlap/")
+models = ("models/hm_overlap_200.keras", "models/hl_overlap_200.keras")
 
 print(f"[yellow]Loading models...[/yellow]")
 models = [tf.keras.models.load_model(f'{d}/{m}') for d, m in zip(model_dirs, models)]
 print(f"[bold green]Loaded models![/bold green]")
 
 print(f"[yellow]Loading testing datasets...[/yellow]")
-datasets = [io.dataset(dir='../../data/512512/overlap/valid', pair=p) for p in ((0, 1), (0, 2))]
-val_datasets = [dataset.tf_dataset(64, (512, 512, 1)) for dataset in datasets]
+
+n = 30
+
+# create first dataset with pair 0, 1
+cs1 = io.ClutterSim(dir="/home/byrne/WORK/research/mars2024/mltrSPSLAKE/M", maxfiles=n)
+cs1.set_max_dims(512, 512)
+cs1.load(pair=(0, 1))
+
+# now do same for pair 0, 2
+cs2 = io.ClutterSim(dir="/home/byrne/WORK/research/mars2024/mltrSPSLAKE/M", maxfiles=n)
+cs2.set_max_dims(512, 512)
+cs2.load(pair=(0, 2))
+
+# move into array
+val_datasets = [cs.tf_dataset(64, testing=1)[1] for cs in (cs1, cs2)]
+
 sources = np.concatenate([x for x, y in val_datasets[0]], axis=0)
 targets1 = np.concatenate([y for x, y in val_datasets[0]], axis=0)
 targets2 = np.concatenate([y for x, y in val_datasets[1]], axis=0)
+
 print(f"[bold green]Loaded datasets![/bold green]")
 
 print(f"[yellow]Generating predictions...[/yellow]")

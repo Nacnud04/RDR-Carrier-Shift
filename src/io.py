@@ -234,19 +234,32 @@ class ClutterSim():
         import tensorflow as tf
 
     def __init__(self, dir="/home/byrne/WORK/research/mars2024/mltrSPSLAKE/T", nc=3, 
-            maxfiles=1500, cropfilelist=False, combinerandom=False):
+            maxfiles=1500, cropfilelist=False, combinerandom=False, generate=True,
+            randomtrainsize=0):
 
         self.random = combinerandom
+        self.generate = generate
+        self.randomsize = randomtrainsize
 
-        # generate list of rsf files in each carrier set
-        self.cs = [np.sort(glob.glob(f"{dir}/dsyT{c}-r*.rsf")) for c in range(nc)]
+        if type(dir) == str:
+
+            # generate list of rsf files in each carrier set
+            self.cs = [np.sort(glob.glob(f"{dir}/dsyT{c}-r*.rsf")) for c in range(nc)]
+
+        if type(dir) == tuple:
+
+            self.cs = [[],[],[]]
+            
+            for c in range(nc):
+                for d in dir:
+                    self.cs[c].extend(list(np.sort(glob.glob(f"{d}/dsyT{c}-r*.rsf"))))
+
+            self.cs = [np.array(c) for c in self.cs]
 
         for c, j in zip(self.cs, range(nc)):
             print(f"Found {len(c)} realizations of carrier {j}")
 
         self.ids = [[int(f.split("-r")[1].split(".")[0]) for f in c] for c in self.cs]
-        self.ids0 = np.array(self.ids[0])
-        self.ids2 = np.array(self.ids[2])
 
         self.N = len(self.cs[2])
 
@@ -265,10 +278,7 @@ class ClutterSim():
     def extract(self, i, carrier):
 
         # pull correct file out of list of rsf files
-        if carrier == 0:
-            path = self.cs[carrier][np.where(self.ids0 == i)][0]
-        elif carrier == 2:
-            path = self.cs[carrier][np.where(self.ids2 == i)][0]
+        path = self.cs[carrier][np.where(self.ids[carrier] == i)][0]
 
         # turn rsf file into rsffile object to grab data
         file = rsffile(path)
@@ -443,14 +453,15 @@ class ClutterSim():
 
         print("\n")
 
-    
-    # --- TENSORFLOW FUNCTIONS ---
-    # make pair tf compatable
 
-    def grab_pair_tf(self, i):
+    def randomize(self):
 
-        if self.random:
+        # make new empty arrs
+        self.nA = []
+        self.nB = []
 
+        for i in range(self.randomsize*self.sections):
+            
             # update
             print(f"Combining random {i}", end="     \r")
             # how many to randomly sum?
@@ -458,12 +469,12 @@ class ClutterSim():
             # seed based on i
             np.random.seed(i)
             # get indicies of things to sum
-            sumids = np.random.randint(0, self.lentrain, size=n)
+            sumids = np.random.randint(0, len(self.As), size=n)
             # set initial array
             A, B = np.copy(self.As[sumids[0]]), np.copy(self.Bs[sumids[0]])
             # iterate through others
             for j in range(1, n):
-                idx = self.train_slices[sumids[j]]
+                idx = j#self.train_slices[sumids[j]]
                 # detemine roll direction and random flip
                 fac = 1
                 if j % 2 == 0:
@@ -473,6 +484,19 @@ class ClutterSim():
                 # sum and roll
                 A += np.roll(self.As[idx], fac * self.maxt // n, axis=1)
                 B += np.roll(self.Bs[idx], fac * self.maxt // n, axis=1)
+                self.nA.append(A)
+                self.nB.append(B)
+
+    
+    # --- TENSORFLOW FUNCTIONS ---
+    # make pair tf compatable
+
+    def grab_pair_tf(self, i):
+
+        if self.random:
+
+            i = tf.cast(i, tf.int32).numpy()
+            A, B = self.nA[i], self.nB[i] 
 
         else:
 

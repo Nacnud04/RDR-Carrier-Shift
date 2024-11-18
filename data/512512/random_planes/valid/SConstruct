@@ -8,7 +8,7 @@ np.random.seed(2023)
 # global parameters
 genplots = False
 testset  = 0.0
-par = dict( nt=512,  ot=+0.0,    dt=0.05,    lt='t',   ut='us',
+par = dict( nt=512,  ot=+0.0,    dt=0.0892857,    lt='t',   ut='us',
             nx=512,  ox=-1000.0, dx=4.00,    lx='x',   ux='.',
             npx=101, opx=-0.005, dpx=0.0001, lpx='px', upx='us/.',
             verb='y'
